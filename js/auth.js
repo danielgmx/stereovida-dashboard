@@ -1,4 +1,4 @@
-const PB_URL = 'http://76.13.122.2:8090';
+const PB_URL = '/pb';
 
 const Auth = (() => {
   const TOKEN_KEY = 'sv_token';
