@@ -18,7 +18,7 @@ const Auth = (() => {
 
   async function login(email, password) {
     try {
-      const res = await fetch(`${PB_URL}/api/admins/auth-with-password`, {
+      const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identity: email, password }),
@@ -26,7 +26,7 @@ const Auth = (() => {
       if (!res.ok) return { success: false };
       const data = await res.json();
       localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(MODEL_KEY, JSON.stringify(data.admin));
+      localStorage.setItem(MODEL_KEY, JSON.stringify(data.record ?? data.admin));
       return { success: true };
     } catch {
       return { success: false };
