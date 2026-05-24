@@ -8,30 +8,30 @@ const SectionEvents = (() => {
     <div id="events-modal" class="modal hidden"></div>`;
 
   async function load() {
-    const res = await API.list('events', 'sort=-event_date&perPage=50');
+    let res;
+    try { res = await API.list('events', 'sort=-created&perPage=50'); } catch (e) {
+      document.getElementById('events-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
+    }
     const items = res?.items ?? [];
     const el = document.getElementById('events-list');
     if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay eventos registrados.</p>'; return; }
-    el.innerHTML = items.map(ev => `
+    el.innerHTML = items.map(ev => {
+      const imgUrl = ev.cover_image ? API.fileUrl('events', ev.id, ev.cover_image) : '';
+      return `
       <div class="list-card">
         <div class="list-card-img">
-          ${ev.image_url ? `<img src="${esc(ev.image_url)}" alt="${esc(ev.title)}" />` : '<div class="img-placeholder">🎪</div>'}
+          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(ev.name)}" />` : '<div class="img-placeholder">🎪</div>'}
         </div>
         <div class="list-card-body">
-          <div class="list-card-title">${esc(ev.title)}</div>
-          <div class="list-card-meta">${formatDate(ev.event_date)} &nbsp;·&nbsp; ${esc(ev.location || '')}</div>
+          <div class="list-card-title">${esc(ev.name)}</div>
+          <div class="list-card-meta">${esc(ev.date || '')} ${ev.time ? '· ' + esc(ev.time) : ''} ${ev.location_name ? '· ' + esc(ev.location_name) : ''}</div>
         </div>
         <div class="list-card-actions">
           <span class="badge ${ev.is_active !== false ? 'badge-on' : 'badge-off'}">${ev.is_active !== false ? 'Activo' : 'Inactivo'}</span>
           <button class="btn-icon" onclick="SectionEvents.openEdit('${ev.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionEvents.confirmDelete('${ev.id}', '${esc(ev.title)}')">🗑️</button>
+          <button class="btn-icon btn-danger" onclick="SectionEvents.confirmDelete('${ev.id}', '${esc(ev.name)}')">🗑️</button>
         </div>
-      </div>`).join('');
-  }
-
-  function formatDate(d) {
-    if (!d) return '';
-    return new Date(d).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' });
+      </div>`}).join('');
   }
 
   function openNew() { openModal(null); }
@@ -39,7 +39,7 @@ const SectionEvents = (() => {
 
   function openModal(item) {
     const isNew = !item;
-    const dateVal = item?.event_date ? item.event_date.slice(0, 10) : '';
+    const imgUrl = item?.cover_image ? API.fileUrl('events', item.id, item.cover_image) : '';
     document.getElementById('events-modal').innerHTML = `
       <div class="modal-backdrop" onclick="SectionEvents.closeModal()"></div>
       <div class="modal-box modal-lg">
@@ -49,26 +49,33 @@ const SectionEvents = (() => {
         </div>
         <form id="events-form">
           <div class="field">
-            <label>Título</label>
-            <input type="text" name="title" value="${esc(item?.title ?? '')}" required />
+            <label>Nombre del evento</label>
+            <input type="text" name="name" value="${esc(item?.name ?? '')}" required />
           </div>
           <div class="field">
-            <label>URL de imagen</label>
-            <input type="url" name="image_url" value="${esc(item?.image_url ?? '')}" placeholder="https://..." />
+            <label>Imagen del evento</label>
+            ${imgUrl ? `<img src="${esc(imgUrl)}" style="max-height:80px;border-radius:6px;margin-bottom:6px" />` : ''}
+            <input type="file" name="cover_image" accept="image/*" ${isNew ? '' : ''} />
           </div>
           <div class="form-grid">
             <div class="field">
-              <label>Fecha del evento</label>
-              <input type="date" name="event_date" value="${dateVal}" />
+              <label>Fecha (MM-DD-YYYY)</label>
+              <input type="text" name="date" value="${esc(item?.date ?? '')}" placeholder="07-04-2026" />
             </div>
             <div class="field">
-              <label>Lugar</label>
-              <input type="text" name="location" value="${esc(item?.location ?? '')}" />
+              <label>Hora</label>
+              <input type="time" name="time" value="${esc(item?.time ?? '')}" />
             </div>
           </div>
-          <div class="field">
-            <label>Categoría</label>
-            <input type="text" name="category" value="${esc(item?.category ?? '')}" placeholder="Ej: Concierto, Feria, Deportes" />
+          <div class="form-grid">
+            <div class="field">
+              <label>Lugar</label>
+              <input type="text" name="location_name" value="${esc(item?.location_name ?? '')}" />
+            </div>
+            <div class="field">
+              <label>Categoría</label>
+              <input type="text" name="category" value="${esc(item?.category ?? '')}" placeholder="Concert, Feria..." />
+            </div>
           </div>
           <div class="field">
             <label>Descripción</label>
@@ -76,7 +83,7 @@ const SectionEvents = (() => {
           </div>
           <div class="field">
             <label>Link de mapa (Google Maps)</label>
-            <input type="url" name="map_url" value="${esc(item?.map_url ?? '')}" placeholder="https://maps.google.com/..." />
+            <input type="url" name="location_url" value="${esc(item?.location_url ?? '')}" placeholder="https://maps.google.com/..." />
           </div>
           <div class="field field-inline">
             <label>Activo</label>
@@ -99,19 +106,37 @@ const SectionEvents = (() => {
     const status = document.getElementById('events-status');
     const btn = form.querySelector('[type="submit"]');
     btn.disabled = true;
-    const data = {
-      title: form.title.value.trim(),
-      image_url: form.image_url.value.trim(),
-      event_date: form.event_date.value || null,
-      location: form.location.value.trim(),
+
+    const fields = {
+      name: form.name.value.trim(),
+      date: form.date.value.trim(),
+      time: form.time.value,
+      location_name: form.location_name.value.trim(),
       category: form.category.value.trim(),
       description: form.description.value.trim(),
-      map_url: form.map_url.value.trim(),
+      location_url: form.location_url.value.trim(),
       is_active: form.is_active.checked,
     };
+
     try {
-      if (id) await API.update('events', id, data);
-      else await API.create('events', data);
+      const file = form.cover_image.files[0];
+      if (file) {
+        const formData = new FormData();
+        for (const [k, v] of Object.entries(fields)) formData.append(k, v);
+        formData.append('cover_image', file);
+        const url = id
+          ? `${PB_URL}/api/collections/events/records/${id}`
+          : `${PB_URL}/api/collections/events/records`;
+        const res = await fetch(url, {
+          method: id ? 'PATCH' : 'POST',
+          headers: { 'Authorization': Auth.getToken() },
+          body: formData,
+        });
+        if (!res.ok) throw new Error();
+      } else {
+        if (id) await API.update('events', id, fields);
+        else await API.create('events', fields);
+      }
       closeModal();
       load();
     } catch {

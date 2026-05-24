@@ -8,14 +8,19 @@ const SectionPromotions = (() => {
     <div id="promos-modal" class="modal hidden"></div>`;
 
   async function load() {
-    const res = await API.list('promotions', 'sort=-created&perPage=50');
+    let res;
+    try { res = await API.list('promotions', 'sort=-created&perPage=50'); } catch (e) {
+      document.getElementById('promos-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
+    }
     const items = res?.items ?? [];
     const el = document.getElementById('promos-list');
     if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay promociones registradas.</p>'; return; }
-    el.innerHTML = items.map(p => `
+    el.innerHTML = items.map(p => {
+      const imgUrl = p.image ? API.fileUrl('promotions', p.id, p.image) : '';
+      return `
       <div class="list-card">
         <div class="list-card-img">
-          ${p.image_url ? `<img src="${esc(p.image_url)}" alt="${esc(p.title)}" />` : '<div class="img-placeholder">🎁</div>'}
+          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(p.title)}" />` : '<div class="img-placeholder">🎁</div>'}
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(p.title)}</div>
@@ -26,7 +31,7 @@ const SectionPromotions = (() => {
           <button class="btn-icon" onclick="SectionPromotions.openEdit('${p.id}')">✏️</button>
           <button class="btn-icon btn-danger" onclick="SectionPromotions.confirmDelete('${p.id}', '${esc(p.title)}')">🗑️</button>
         </div>
-      </div>`).join('');
+      </div>`}).join('');
   }
 
   function openNew() { openModal(null); }
@@ -34,8 +39,7 @@ const SectionPromotions = (() => {
 
   function openModal(item) {
     const isNew = !item;
-    const startVal = item?.start_date ? item.start_date.slice(0, 10) : '';
-    const endVal = item?.end_date ? item.end_date.slice(0, 10) : '';
+    const imgUrl = item?.image ? API.fileUrl('promotions', item.id, item.image) : '';
     document.getElementById('promos-modal').innerHTML = `
       <div class="modal-backdrop" onclick="SectionPromotions.closeModal()"></div>
       <div class="modal-box modal-lg">
@@ -49,8 +53,9 @@ const SectionPromotions = (() => {
             <input type="text" name="title" value="${esc(item?.title ?? '')}" required />
           </div>
           <div class="field">
-            <label>URL de imagen</label>
-            <input type="url" name="image_url" value="${esc(item?.image_url ?? '')}" placeholder="https://..." />
+            <label>Imagen de la promoción</label>
+            ${imgUrl ? `<img src="${esc(imgUrl)}" style="max-height:80px;border-radius:6px;margin-bottom:6px" />` : ''}
+            <input type="file" name="image" accept="image/*" />
           </div>
           <div class="field">
             <label>Resumen (aparece en la lista)</label>
@@ -58,20 +63,20 @@ const SectionPromotions = (() => {
           </div>
           <div class="field">
             <label>Descripción completa</label>
-            <textarea name="description" rows="4">${esc(item?.description ?? '')}</textarea>
+            <textarea name="details" rows="4">${esc(item?.details ?? '')}</textarea>
           </div>
           <div class="field">
-            <label>Dinámica (cómo participar)</label>
-            <textarea name="dynamics" rows="3">${esc(item?.dynamics ?? '')}</textarea>
+            <label>Mecánica (cómo participar)</label>
+            <textarea name="mechanics" rows="3">${esc(item?.mechanics ?? '')}</textarea>
           </div>
           <div class="form-grid">
             <div class="field">
-              <label>Fecha inicio</label>
-              <input type="date" name="start_date" value="${startVal}" />
+              <label>Fecha inicio (MM-DD-YYYY)</label>
+              <input type="text" name="_start_date" value="${esc(item?._start_date ?? '')}" placeholder="05-01-2026" />
             </div>
             <div class="field">
-              <label>Fecha fin</label>
-              <input type="date" name="end_date" value="${endVal}" />
+              <label>Fecha fin (MM-DD-YYYY)</label>
+              <input type="text" name="end_date" value="${esc(item?.end_date ?? '')}" placeholder="05-31-2026" />
             </div>
           </div>
           <div class="field">
@@ -103,21 +108,38 @@ const SectionPromotions = (() => {
     const status = document.getElementById('promos-status');
     const btn = form.querySelector('[type="submit"]');
     btn.disabled = true;
-    const data = {
+
+    const fields = {
       title: form.title.value.trim(),
-      image_url: form.image_url.value.trim(),
       summary: form.summary.value.trim(),
-      description: form.description.value.trim(),
-      dynamics: form.dynamics.value.trim(),
-      start_date: form.start_date.value || null,
-      end_date: form.end_date.value || null,
+      details: form.details.value.trim(),
+      mechanics: form.mechanics.value.trim(),
+      _start_date: form._start_date.value.trim(),
+      end_date: form.end_date.value.trim(),
       cta_label: form.cta_label.value.trim(),
       cta_url: form.cta_url.value.trim(),
       is_active: form.is_active.checked,
     };
+
     try {
-      if (id) await API.update('promotions', id, data);
-      else await API.create('promotions', data);
+      const file = form.image.files[0];
+      if (file) {
+        const formData = new FormData();
+        for (const [k, v] of Object.entries(fields)) formData.append(k, v);
+        formData.append('image', file);
+        const url = id
+          ? `${PB_URL}/api/collections/promotions/records/${id}`
+          : `${PB_URL}/api/collections/promotions/records`;
+        const res = await fetch(url, {
+          method: id ? 'PATCH' : 'POST',
+          headers: { 'Authorization': Auth.getToken() },
+          body: formData,
+        });
+        if (!res.ok) throw new Error();
+      } else {
+        if (id) await API.update('promotions', id, fields);
+        else await API.create('promotions', fields);
+      }
       closeModal();
       load();
     } catch {

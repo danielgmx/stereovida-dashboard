@@ -10,7 +10,10 @@ const SectionShows = (() => {
     <div id="show-modal" class="modal hidden"></div>`;
 
   async function load() {
-    const res = await API.list('shows', 'sort=start_time&perPage=50');
+    let res;
+    try { res = await API.list('shows', 'sort=start_time&perPage=50'); } catch (e) {
+      document.getElementById('shows-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
+    }
     const items = res?.items ?? [];
     const el = document.getElementById('shows-list');
     if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay shows registrados.</p>'; return; }
@@ -32,7 +35,9 @@ const SectionShows = (() => {
   }
 
   function formatDays(days) {
-    if (!days || !days.length) return 'Todos los días';
+    if (!days) return 'Todos los días';
+    if (typeof days === 'string') return days;
+    if (!Array.isArray(days) || !days.length) return 'Todos los días';
     return days.map(d => DAYS[d] ?? d).join(', ');
   }
 
