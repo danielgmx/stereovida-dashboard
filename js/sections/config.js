@@ -48,6 +48,14 @@ const SectionConfig = (() => {
             ${logoUrl ? `<img src="${logoUrl}" class="preview-logo" alt="Logo actual" />` : ''}
             <input type="file" name="logo_file" accept="image/*" />
           </div>
+          <div class="field field-full">
+            <label>Descripción de la estación</label>
+            <input type="text" name="station_description" value="${esc(cfg.station_description || '')}" placeholder="Música Internacional · Nuevo León, México" />
+          </div>
+          <div class="field field-full">
+            <label>Sitio web</label>
+            <input type="url" name="website_url" value="${esc(cfg.website_url || '')}" placeholder="https://stereovida1023.com" />
+          </div>
         </div>
         <div class="form-actions">
           <button type="submit" class="btn btn-primary">Guardar cambios</button>
@@ -83,6 +91,8 @@ const SectionConfig = (() => {
       whatsapp_number: form.whatsapp_number.value.trim(),
       primary_color: form.primary_color_hex.value.trim(),
       background_color: form.background_color_hex.value.trim(),
+      station_description: form.station_description.value.trim(),
+      website_url: form.website_url.value.trim(),
     };
 
     try {
