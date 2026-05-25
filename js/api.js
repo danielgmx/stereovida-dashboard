@@ -8,13 +8,27 @@ const API = (() => {
   }
 
   async function request(method, path, body = null) {
-    const opts = { method, headers: headers() };
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 12000);
+    const opts = { method, headers: headers(), signal: controller.signal };
     if (body) opts.body = JSON.stringify(body);
-    const res = await fetch(`${PB_URL}/api/collections/${path}`, opts);
-    if (res.status === 401) { Auth.logout(); return null; }
-    if (!res.ok) throw new Error(`API error ${res.status}`);
-    if (res.status === 204) return null;
-    return res.json();
+    try {
+      const res = await fetch(`${PB_URL}/api/collections/${path}`, opts);
+      clearTimeout(timer);
+      if (res.status === 401) { Auth.logout(); return null; }
+      if (!res.ok) {
+        const text = await res.text();
+        let msg = `Error ${res.status}`;
+        try { msg = JSON.parse(text).message || msg; } catch {}
+        throw new Error(msg);
+      }
+      if (res.status === 204) return null;
+      return res.json();
+    } catch (err) {
+      clearTimeout(timer);
+      if (err.name === 'AbortError') throw new Error('Tiempo de espera agotado. Verifica la conexión.');
+      throw err;
+    }
   }
 
   async function uploadFile(collection, recordId, field, file) {
