@@ -59,8 +59,8 @@ const SectionEvents = (() => {
           </div>
           <div class="form-grid">
             <div class="field">
-              <label>Fecha (MM-DD-YYYY)</label>
-              <input type="text" name="date" value="${esc(item?.date ?? '')}" placeholder="07-04-2026" />
+              <label>Fecha</label>
+              <input type="date" name="date" value="${esc(item?.date ?? '')}" />
             </div>
             <div class="field">
               <label>Hora</label>
