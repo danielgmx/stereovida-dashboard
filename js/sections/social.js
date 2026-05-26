@@ -2,7 +2,7 @@ const SectionSocial = (() => {
   const html = () => `
     <div class="section-header">
       <h1>Redes Sociales</h1>
-      <button class="btn btn-primary" onclick="SectionSocial.openNew()">+ Agregar red</button>
+      <button class="btn btn-primary" onclick="SectionSocial.openNew()">${Icons.plus} Agregar red</button>
     </div>
     <div id="social-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="social-modal" class="modal hidden"></div>`;
@@ -20,8 +20,8 @@ const SectionSocial = (() => {
         </div>
         <div class="list-card-actions">
           <span class="badge ${s.is_active ? 'badge-on' : 'badge-off'}">${s.is_active ? 'Activo' : 'Inactivo'}</span>
-          <button class="btn-icon" onclick="SectionSocial.openEdit('${s.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionSocial.confirmDelete('${s.id}', '${esc(s.label || s.platform)}')">🗑️</button>
+          <button class="btn-icon" onclick="SectionSocial.openEdit('${s.id}')">${Icons.edit}</button>
+          <button class="btn-icon btn-danger" onclick="SectionSocial.confirmDelete('${s.id}', '${esc(s.label || s.platform)}')">${Icons.trash}</button>
         </div>
       </div>`).join('');
   }

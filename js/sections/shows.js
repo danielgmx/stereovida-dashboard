@@ -4,7 +4,7 @@ const SectionShows = (() => {
   const html = () => `
     <div class="section-header">
       <h1>Programación</h1>
-      <button class="btn btn-primary" onclick="SectionShows.openNew()">+ Agregar show</button>
+      <button class="btn btn-primary" onclick="SectionShows.openNew()">${Icons.plus} Agregar show</button>
     </div>
     <div id="shows-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="show-modal" class="modal hidden"></div>`;
@@ -20,7 +20,7 @@ const SectionShows = (() => {
     el.innerHTML = items.map(s => `
       <div class="list-card">
         <div class="list-card-img">
-          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" />` : '<div class="img-placeholder">🎙️</div>'}
+          ${s.image_url ? `<img src="${esc(s.image_url)}" alt="${esc(s.name)}" />` : `<div class="img-placeholder">${Icons.mic}</div>`}
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(s.name)}</div>
@@ -28,8 +28,8 @@ const SectionShows = (() => {
         </div>
         <div class="list-card-actions">
           <span class="badge ${s.is_active ? 'badge-on' : 'badge-off'}">${s.is_active ? 'Activo' : 'Inactivo'}</span>
-          <button class="btn-icon" onclick="SectionShows.openEdit('${s.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionShows.confirmDelete('${s.id}', '${esc(s.name)}')">🗑️</button>
+          <button class="btn-icon" onclick="SectionShows.openEdit('${s.id}')">${Icons.edit}</button>
+          <button class="btn-icon btn-danger" onclick="SectionShows.confirmDelete('${s.id}', '${esc(s.name)}')">${Icons.trash}</button>
         </div>
       </div>`).join('');
   }

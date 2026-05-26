@@ -2,7 +2,7 @@ const SectionPromotions = (() => {
   const html = () => `
     <div class="section-header">
       <h1>Promociones</h1>
-      <button class="btn btn-primary" onclick="SectionPromotions.openNew()">+ Agregar promoción</button>
+      <button class="btn btn-primary" onclick="SectionPromotions.openNew()">${Icons.plus} Agregar promoción</button>
     </div>
     <div id="promos-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="promos-modal" class="modal hidden"></div>`;
@@ -20,7 +20,7 @@ const SectionPromotions = (() => {
       return `
       <div class="list-card">
         <div class="list-card-img">
-          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(p.title)}" />` : '<div class="img-placeholder">🎁</div>'}
+          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(p.title)}" />` : `<div class="img-placeholder">${Icons.tag_ph}</div>`}
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(p.title)}</div>
@@ -28,8 +28,8 @@ const SectionPromotions = (() => {
         </div>
         <div class="list-card-actions">
           <span class="badge ${p.is_active !== false ? 'badge-on' : 'badge-off'}">${p.is_active !== false ? 'Activo' : 'Inactivo'}</span>
-          <button class="btn-icon" onclick="SectionPromotions.openEdit('${p.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionPromotions.confirmDelete('${p.id}', '${esc(p.title)}')">🗑️</button>
+          <button class="btn-icon" onclick="SectionPromotions.openEdit('${p.id}')">${Icons.edit}</button>
+          <button class="btn-icon btn-danger" onclick="SectionPromotions.confirmDelete('${p.id}', '${esc(p.title)}')">${Icons.trash}</button>
         </div>
       </div>`}).join('');
   }

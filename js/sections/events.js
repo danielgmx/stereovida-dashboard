@@ -2,7 +2,7 @@ const SectionEvents = (() => {
   const html = () => `
     <div class="section-header">
       <h1>Eventos</h1>
-      <button class="btn btn-primary" onclick="SectionEvents.openNew()">+ Agregar evento</button>
+      <button class="btn btn-primary" onclick="SectionEvents.openNew()">${Icons.plus} Agregar evento</button>
     </div>
     <div id="events-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="events-modal" class="modal hidden"></div>`;
@@ -20,7 +20,7 @@ const SectionEvents = (() => {
       return `
       <div class="list-card">
         <div class="list-card-img">
-          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(ev.name)}" />` : '<div class="img-placeholder">🎪</div>'}
+          ${imgUrl ? `<img src="${esc(imgUrl)}" alt="${esc(ev.name)}" />` : `<div class="img-placeholder">${Icons.calendar_ph}</div>`}
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(ev.name)}</div>
@@ -28,8 +28,8 @@ const SectionEvents = (() => {
         </div>
         <div class="list-card-actions">
           <span class="badge ${ev.is_active !== false ? 'badge-on' : 'badge-off'}">${ev.is_active !== false ? 'Activo' : 'Inactivo'}</span>
-          <button class="btn-icon" onclick="SectionEvents.openEdit('${ev.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionEvents.confirmDelete('${ev.id}', '${esc(ev.name)}')">🗑️</button>
+          <button class="btn-icon" onclick="SectionEvents.openEdit('${ev.id}')">${Icons.edit}</button>
+          <button class="btn-icon btn-danger" onclick="SectionEvents.confirmDelete('${ev.id}', '${esc(ev.name)}')">${Icons.trash}</button>
         </div>
       </div>`}).join('');
   }

@@ -2,7 +2,7 @@ const SectionAds = (() => {
   const html = () => `
     <div class="section-header">
       <h1>Publicidad</h1>
-      <button class="btn btn-primary" onclick="SectionAds.openNew()">+ Agregar banner</button>
+      <button class="btn btn-primary" onclick="SectionAds.openNew()">${Icons.plus} Agregar banner</button>
     </div>
     <div id="ads-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="ads-modal" class="modal hidden"></div>`;
@@ -15,15 +15,15 @@ const SectionAds = (() => {
     el.innerHTML = items.map(a => `
       <div class="list-card">
         <div class="list-card-img wide">
-          ${a.image_url ? `<img src="${esc(a.image_url)}" alt="Banner" />` : '<div class="img-placeholder">📢</div>'}
+          ${a.image_url ? `<img src="${esc(a.image_url)}" alt="Banner" />` : `<div class="img-placeholder">${Icons.monitor_ph}</div>`}
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(a.link_url || 'Sin enlace')}</div>
         </div>
         <div class="list-card-actions">
           <span class="badge ${a.is_active ? 'badge-on' : 'badge-off'}">${a.is_active ? 'Activo' : 'Inactivo'}</span>
-          <button class="btn-icon" onclick="SectionAds.openEdit('${a.id}')">✏️</button>
-          <button class="btn-icon btn-danger" onclick="SectionAds.confirmDelete('${a.id}')">🗑️</button>
+          <button class="btn-icon" onclick="SectionAds.openEdit('${a.id}')">${Icons.edit}</button>
+          <button class="btn-icon btn-danger" onclick="SectionAds.confirmDelete('${a.id}')">${Icons.trash}</button>
         </div>
       </div>`).join('');
   }
