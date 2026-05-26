@@ -62,7 +62,15 @@ const SectionRecordings = (() => {
             <label>Archivo de audio (MP3)</label>
             ${item?.audio_url ? `<p class="muted" style="font-size:12px;margin-bottom:6px;">✓ Ya tiene audio. Sube otro para reemplazarlo.</p>` : ''}
             <input type="file" name="audio_file" accept="audio/*" ${isNew ? 'required' : ''} />
-            <span id="upload-progress" class="status-msg hidden"></span>
+            <div id="upload-progress-wrap" class="hidden" style="margin-top:10px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                <span style="font-size:12px;color:var(--text-muted);">Subiendo audio…</span>
+                <span id="upload-pct" style="font-size:12px;font-weight:700;color:var(--primary);">0%</span>
+              </div>
+              <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+                <div id="upload-bar" style="height:100%;background:var(--primary);width:0%;border-radius:4px;transition:width 0.15s;"></div>
+              </div>
+            </div>
           </div>
           <div class="form-grid">
             <div class="field">
@@ -103,29 +111,48 @@ const SectionRecordings = (() => {
   async function save(e, id) {
     e.preventDefault();
     const form = e.target;
-    const status   = document.getElementById('recordings-status');
-    const progress = document.getElementById('upload-progress');
-    const btn      = form.querySelector('[type="submit"]');
+    const status = document.getElementById('recordings-status');
+    const btn    = form.querySelector('[type="submit"]');
     btn.disabled   = true;
 
     let audio_url = null;
     const audioFile = form.audio_file.files[0];
 
     if (audioFile) {
-      showStatus(progress, 'Subiendo audio… esto puede tardar un momento', 'success');
+      const wrap = document.getElementById('upload-progress-wrap');
+      const bar  = document.getElementById('upload-bar');
+      const pct  = document.getElementById('upload-pct');
+      wrap.classList.remove('hidden');
+      bar.style.width = '0%';
+      pct.textContent = '0%';
       try {
-        const fd = new FormData();
-        fd.append('file', audioFile);
-        const res = await fetch(WORKER_URL, {
-          method: 'POST',
-          headers: { 'X-Upload-Token': WORKER_TOKEN },
-          body: fd,
+        audio_url = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          const fd  = new FormData();
+          fd.append('file', audioFile);
+          xhr.upload.addEventListener('progress', e => {
+            if (e.lengthComputable) {
+              const p = Math.round(e.loaded / e.total * 100);
+              bar.style.width = p + '%';
+              pct.textContent = p + '%';
+            }
+          });
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try { resolve(JSON.parse(xhr.responseText).url); }
+              catch { reject(new Error('Respuesta inválida del servidor')); }
+            } else {
+              reject(new Error(`Error al subir el audio (${xhr.status})`));
+            }
+          });
+          xhr.addEventListener('error', () => reject(new Error('Error de red al subir')));
+          xhr.open('POST', WORKER_URL);
+          xhr.setRequestHeader('X-Upload-Token', WORKER_TOKEN);
+          xhr.send(fd);
         });
-        if (!res.ok) throw new Error(`Error al subir el audio (${res.status})`);
-        const data = await res.json();
-        audio_url = data.url;
-        progress.classList.add('hidden');
+        wrap.classList.add('hidden');
       } catch (err) {
+        wrap.classList.add('hidden');
         showStatus(status, err.message, 'error');
         btn.disabled = false;
         return;
