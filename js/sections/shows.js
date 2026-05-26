@@ -121,9 +121,10 @@ const SectionShows = (() => {
 
     try {
       if (id) await API.update('shows', id, data);
-      else await API.create('shows', data);
+      else await API.create('shows', { ...data, is_published: false });
       closeModal();
       load();
+      updatePendingCount();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;

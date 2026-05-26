@@ -88,10 +88,56 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('open');
 }
 
+// ─── Publish system ────────────────────────────────────────────────────────
+
+const PUBLISHABLE = ['shows', 'events', 'promotions', 'ads', 'social_links', 'splash_screens'];
+
+async function updatePendingCount() {
+  let total = 0;
+  for (const col of PUBLISHABLE) {
+    try {
+      const res = await API.list(col, `perPage=1&filter=${encodeURIComponent('(is_published=false)')}`);
+      total += res?.totalItems ?? 0;
+    } catch {}
+  }
+  const badge = document.getElementById('pending-badge');
+  if (badge) {
+    badge.textContent = total;
+    badge.classList.toggle('hidden', total === 0);
+  }
+}
+
+async function publishAll() {
+  const btn = document.getElementById('publish-btn');
+  const label = btn.querySelector('.publish-label');
+  btn.disabled = true;
+  label.textContent = 'Publicando...';
+  let count = 0;
+  try {
+    for (const col of PUBLISHABLE) {
+      const res = await API.list(col, `perPage=200&filter=${encodeURIComponent('(is_published=false)')}`);
+      for (const item of res?.items ?? []) {
+        await API.update(col, item.id, { is_published: true });
+        count++;
+      }
+    }
+    const mod = SECTIONS[currentSection]?.module();
+    if (mod) mod.load();
+    await updatePendingCount();
+    label.textContent = count > 0 ? `${count} publicado${count !== 1 ? 's' : ''} ✓` : 'Sin cambios';
+    setTimeout(() => { label.textContent = 'Enviar cambios'; }, 3000);
+  } catch (e) {
+    label.textContent = 'Error al publicar';
+    setTimeout(() => { label.textContent = 'Enviar cambios'; }, 3000);
+  }
+  btn.disabled = false;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   Auth.requireAuth();
   buildSidebar();
 
   const initial = location.hash.slice(1);
   navigate(SECTIONS[initial] ? initial : 'config');
+  updatePendingCount();
 });

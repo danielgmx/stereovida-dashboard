@@ -89,9 +89,10 @@ const SectionSocial = (() => {
     };
     try {
       if (id) await API.update('social_links', id, data);
-      else await API.create('social_links', data);
+      else await API.create('social_links', { ...data, is_published: false });
       closeModal();
       load();
+      updatePendingCount();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;

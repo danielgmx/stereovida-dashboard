@@ -77,9 +77,10 @@ const SectionAds = (() => {
     };
     try {
       if (id) await API.update('ads', id, data);
-      else await API.create('ads', data);
+      else await API.create('ads', { ...data, is_published: false });
       closeModal();
       load();
+      updatePendingCount();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;

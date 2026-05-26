@@ -124,6 +124,7 @@ const SectionEvents = (() => {
         const formData = new FormData();
         for (const [k, v] of Object.entries(fields)) formData.append(k, v);
         formData.append('cover_image', file);
+        if (!id) formData.append('is_published', 'false');
         const url = id
           ? `${PB_URL}/api/collections/events/records/${id}`
           : `${PB_URL}/api/collections/events/records`;
@@ -135,10 +136,11 @@ const SectionEvents = (() => {
         if (!res.ok) throw new Error();
       } else {
         if (id) await API.update('events', id, fields);
-        else await API.create('events', fields);
+        else await API.create('events', { ...fields, is_published: false });
       }
       closeModal();
       load();
+      updatePendingCount();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;

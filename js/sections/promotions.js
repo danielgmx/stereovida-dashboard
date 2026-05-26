@@ -127,6 +127,7 @@ const SectionPromotions = (() => {
         const formData = new FormData();
         for (const [k, v] of Object.entries(fields)) formData.append(k, v);
         formData.append('image', file);
+        if (!id) formData.append('is_published', 'false');
         const url = id
           ? `${PB_URL}/api/collections/promotions/records/${id}`
           : `${PB_URL}/api/collections/promotions/records`;
@@ -138,10 +139,11 @@ const SectionPromotions = (() => {
         if (!res.ok) throw new Error();
       } else {
         if (id) await API.update('promotions', id, fields);
-        else await API.create('promotions', fields);
+        else await API.create('promotions', { ...fields, is_published: false });
       }
       closeModal();
       load();
+      updatePendingCount();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;
