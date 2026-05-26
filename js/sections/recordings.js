@@ -14,7 +14,7 @@ const SectionRecordings = (() => {
 
   async function load() {
     let res;
-    try { res = await API.list('recordings', 'sort=-created&perPage=50'); } catch (e) {
+    try { res = await API.list('recording', 'sort=-created&perPage=50'); } catch (e) {
       document.getElementById('recordings-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
     }
     const items = res?.items ?? [];
@@ -38,7 +38,7 @@ const SectionRecordings = (() => {
   }
 
   function openNew() { openModal(null); }
-  async function openEdit(id) { openModal(await API.get('recordings', id)); }
+  async function openEdit(id) { openModal(await API.get('recording', id)); }
 
   function openModal(item) {
     const isNew = !item;
@@ -144,13 +144,13 @@ const SectionRecordings = (() => {
     if (audio_url) fields.audio_url = audio_url;
 
     try {
-      if (id) await API.update('recordings', id, fields);
-      else    await API.create('recordings', { ...fields, is_published: false });
+      if (id) await API.update('recording', id, fields);
+      else    await API.create('recording', { ...fields, is_published: false });
       closeModal();
       load();
       updatePendingCount();
-    } catch {
-      showStatus(status, 'Error al guardar', 'error');
+    } catch (err) {
+      showStatus(status, 'Error: ' + (err?.message ?? err), 'error');
       btn.disabled = false;
     }
   }
@@ -163,7 +163,7 @@ const SectionRecordings = (() => {
 
   function confirmDelete(id, name) {
     if (!confirm(`¿Eliminar la grabación "${name}"?`)) return;
-    API.remove('recordings', id).then(() => load());
+    API.remove('recording', id).then(() => load());
   }
 
   return { html, load, openNew, openEdit, closeModal, confirmDelete };

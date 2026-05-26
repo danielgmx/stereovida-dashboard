@@ -92,7 +92,7 @@ function toggleSidebar() {
 
 // ─── Publish system ────────────────────────────────────────────────────────
 
-const PUBLISHABLE = ['shows', 'events', 'promotions', 'ads', 'social_links', 'splash_screens', 'recordings'];
+const PUBLISHABLE = ['shows', 'events', 'promotions', 'ads', 'social_links', 'splash_screens', 'recording'];
 
 async function updatePendingCount() {
   let total = 0;
