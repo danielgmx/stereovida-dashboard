@@ -35,10 +35,17 @@ const SectionShows = (() => {
   }
 
   function formatDays(days) {
-    if (!days) return 'Todos los días';
+    if (!days || (typeof days === 'string' && !days.trim())) return 'Todos los días';
     if (typeof days === 'string') return days;
     if (!Array.isArray(days) || !days.length) return 'Todos los días';
     return days.map(d => DAYS[d] ?? d).join(', ');
+  }
+
+  function parseDaysFromRecord(raw) {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(Number).filter(n => n >= 0 && n <= 6);
+    if (typeof raw === 'string') return DAYS.map((d, i) => raw.includes(d) ? i : -1).filter(i => i !== -1);
+    return [];
   }
 
   function openNew() { openModal(null); }
@@ -50,7 +57,7 @@ const SectionShows = (() => {
 
   function openModal(show) {
     const isNew = !show;
-    const days = show?.days ?? [];
+    const days = parseDaysFromRecord(show?.days);
     document.getElementById('show-modal').innerHTML = `
       <div class="modal-backdrop" onclick="SectionShows.closeModal()"></div>
       <div class="modal-box">
@@ -115,7 +122,7 @@ const SectionShows = (() => {
       image_url: form.image_url.value.trim(),
       start_time: form.start_time.value,
       end_time: form.end_time.value,
-      days: checkedDays,
+      days: checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
       is_active: form.is_active.checked,
     };
 
