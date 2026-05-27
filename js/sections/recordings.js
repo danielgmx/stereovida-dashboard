@@ -87,11 +87,16 @@ const SectionRecordings = (() => {
             </div>
             <div class="field">
               <label>Categoría</label>
-              <select name="category">
-                <option value="show"       ${(item?.category ?? 'show') === 'show'       ? 'selected' : ''}>Show</option>
-                <option value="entrevista" ${item?.category === 'entrevista' ? 'selected' : ''}>Entrevista</option>
-                <option value="especial"   ${item?.category === 'especial'   ? 'selected' : ''}>Especial</option>
-              </select>
+              <input type="text" name="category" value="${esc(item?.category ?? 'show')}"
+                list="cat-suggestions" placeholder="ej. Show, Entrevista, Podcast…" />
+              <datalist id="cat-suggestions">
+                <option value="show">Show</option>
+                <option value="entrevista">Entrevista</option>
+                <option value="especial">Especial</option>
+                <option value="podcast">Podcast</option>
+                <option value="reflexion">Reflexión</option>
+                <option value="noticias">Noticias</option>
+              </datalist>
             </div>
             <div class="field field-inline">
               <input type="checkbox" name="is_active" id="rec-active" ${item?.is_active !== false ? 'checked' : ''} />
