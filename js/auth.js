@@ -15,6 +15,11 @@ const Auth = (() => {
     }
   }
 
+  function _saveSession(data) {
+    localStorage.setItem(TOKEN_KEY, data.token);
+    localStorage.setItem(MODEL_KEY, JSON.stringify(data.record ?? data.admin));
+  }
+
   // Paso 1: solicitar código OTP al correo
   async function requestOtp(email) {
     try {
@@ -31,30 +36,48 @@ const Auth = (() => {
     }
   }
 
-  // Paso 2: verificar código OTP e iniciar sesión
+  // Paso 2: verificar código OTP
+  // Si PocketBase exige 2FA (OTP + contraseña), devuelve { needsMfa: true, mfaId }
   async function loginWithOtp(otpId, code) {
     try {
-      console.log('loginWithOtp:', { otpId, code });
       const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ otpId, password: code }),
       });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        console.error('OTP error:', res.status, errData);
-        return { success: false, error: errData.message || JSON.stringify(errData) };
+      const data = await res.json().catch(() => ({}));
+      // OTP correcto pero PocketBase pide segundo factor (contraseña)
+      if (data.mfaId) {
+        return { success: false, needsMfa: true, mfaId: data.mfaId };
       }
-      const data = await res.json();
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(MODEL_KEY, JSON.stringify(data.record ?? data.admin));
+      if (!res.ok) {
+        return { success: false, error: data.message || 'Código incorrecto o expirado.' };
+      }
+      _saveSession(data);
       return { success: true };
     } catch (e) {
       return { success: false, error: e.message };
     }
   }
 
-  // Fallback: login con contraseña (por si SMTP no está configurado)
+  // Paso 3 (solo cuando needsMfa): completar con contraseña
+  async function completeMfa(email, password, mfaId) {
+    try {
+      const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ identity: email, password, mfaId }),
+      });
+      if (!res.ok) return { success: false };
+      const data = await res.json();
+      _saveSession(data);
+      return { success: true };
+    } catch {
+      return { success: false };
+    }
+  }
+
+  // Fallback: login directo con contraseña
   async function loginWithPassword(email, password) {
     try {
       const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-password`, {
@@ -64,8 +87,7 @@ const Auth = (() => {
       });
       if (!res.ok) return { success: false };
       const data = await res.json();
-      localStorage.setItem(TOKEN_KEY, data.token);
-      localStorage.setItem(MODEL_KEY, JSON.stringify(data.record ?? data.admin));
+      _saveSession(data);
       return { success: true };
     } catch {
       return { success: false };
@@ -86,5 +108,5 @@ const Auth = (() => {
     if (!isLoggedIn()) window.location.href = 'login.html';
   }
 
-  return { isLoggedIn, requestOtp, loginWithOtp, loginWithPassword, logout, getToken, requireAuth };
+  return { isLoggedIn, requestOtp, loginWithOtp, completeMfa, loginWithPassword, logout, getToken, requireAuth };
 })();

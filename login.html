@@ -109,6 +109,23 @@
       <span class="back-link" onclick="showEmailStep()">← Cambiar correo</span>
     </div>
 
+    <!-- Paso 3: contraseña para completar 2FA (cuando PocketBase lo requiere) -->
+    <div id="step-mfa" class="hidden">
+      <p class="login-email-hint">Código verificado.<br>Ingresa tu contraseña para completar el acceso.</p>
+      <form id="form-mfa">
+        <div class="field">
+          <label for="mfa-password">Contraseña</label>
+          <input id="mfa-password" type="password" autocomplete="current-password" placeholder="••••••••" required />
+        </div>
+        <p id="mfa-error" class="error-msg hidden"></p>
+        <button type="submit" id="btn-mfa" class="btn btn-primary btn-full">
+          <span id="btn-mfa-text">Completar acceso</span>
+          <span id="btn-mfa-spinner" class="spinner hidden"></span>
+        </button>
+      </form>
+      <span class="back-link" onclick="showEmailStep()">← Volver al inicio</span>
+    </div>
+
     <!-- Fallback: contraseña -->
     <div id="step-password" class="hidden">
       <form id="form-password" autocomplete="on">
@@ -136,6 +153,7 @@
 
     let currentOtpId = null;
     let currentEmail = '';
+    let currentMfaId = null;
     let resendCountdown = null;
 
     // ── Paso 1: solicitar código ──────────────────────────────────────────
@@ -191,6 +209,12 @@
 
       if (result.success) {
         window.location.href = 'index.html';
+      } else if (result.needsMfa) {
+        currentMfaId = result.mfaId;
+        showMfaStep();
+        btn.disabled = false;
+        btnText.textContent = 'Verificar código';
+        spinner.classList.add('hidden');
       } else {
         errorEl.textContent = result.error || 'Código incorrecto o expirado. Intenta de nuevo.';
         errorEl.classList.remove('hidden');
@@ -225,6 +249,35 @@
       }, 1000);
     }
 
+    // ── Paso 3: completar 2FA con contraseña ─────────────────────────────
+    document.getElementById('form-mfa').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('mfa-password').value;
+      const btn = document.getElementById('btn-mfa');
+      const btnText = document.getElementById('btn-mfa-text');
+      const spinner = document.getElementById('btn-mfa-spinner');
+      const errorEl = document.getElementById('mfa-error');
+
+      btn.disabled = true;
+      btnText.textContent = 'Verificando...';
+      spinner.classList.remove('hidden');
+      errorEl.classList.add('hidden');
+
+      const result = await Auth.completeMfa(currentEmail, password, currentMfaId);
+
+      if (result.success) {
+        window.location.href = 'index.html';
+      } else {
+        errorEl.textContent = 'Contraseña incorrecta. Intenta de nuevo.';
+        errorEl.classList.remove('hidden');
+        btn.disabled = false;
+        btnText.textContent = 'Completar acceso';
+        spinner.classList.add('hidden');
+        document.getElementById('mfa-password').value = '';
+        document.getElementById('mfa-password').focus();
+      }
+    });
+
     // ── Fallback: contraseña ──────────────────────────────────────────────
     document.getElementById('form-password').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -254,24 +307,32 @@
     });
 
     // ── Navegación entre pasos ────────────────────────────────────────────
+    function _hideAll() {
+      ['step-email','step-otp','step-mfa','step-password'].forEach(id =>
+        document.getElementById(id).classList.add('hidden'));
+    }
+
     function showEmailStep() {
+      _hideAll();
       document.getElementById('step-email').classList.remove('hidden');
-      document.getElementById('step-otp').classList.add('hidden');
-      document.getElementById('step-password').classList.add('hidden');
       document.getElementById('otp-code').value = '';
       clearInterval(resendCountdown);
     }
 
     function showOtpStep() {
-      document.getElementById('step-email').classList.add('hidden');
+      _hideAll();
       document.getElementById('step-otp').classList.remove('hidden');
-      document.getElementById('step-password').classList.add('hidden');
       setTimeout(() => document.getElementById('otp-code').focus(), 100);
     }
 
+    function showMfaStep() {
+      _hideAll();
+      document.getElementById('step-mfa').classList.remove('hidden');
+      setTimeout(() => document.getElementById('mfa-password').focus(), 100);
+    }
+
     function showPasswordForm() {
-      document.getElementById('step-email').classList.add('hidden');
-      document.getElementById('step-otp').classList.add('hidden');
+      _hideAll();
       document.getElementById('step-password').classList.remove('hidden');
       document.getElementById('pw-email').value = document.getElementById('email').value;
       document.getElementById('pw-email').focus();
