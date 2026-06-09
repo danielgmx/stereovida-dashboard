@@ -74,6 +74,23 @@ const Auth = (() => {
     }
   }
 
+  function getRole() {
+    try {
+      const model = JSON.parse(localStorage.getItem(MODEL_KEY));
+      return model?.role || 'admin'; // default admin para _superusers existentes sin rol
+    } catch {
+      return 'admin';
+    }
+  }
+
+  function getUser() {
+    try {
+      return JSON.parse(localStorage.getItem(MODEL_KEY)) || {};
+    } catch {
+      return {};
+    }
+  }
+
   function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(MODEL_KEY);
@@ -88,5 +105,5 @@ const Auth = (() => {
     if (!isLoggedIn()) window.location.href = 'login.html';
   }
 
-  return { isLoggedIn, loginWithPassword, requestOtp, completeMfaWithOtp, logout, getToken, requireAuth };
+  return { isLoggedIn, loginWithPassword, requestOtp, completeMfaWithOtp, logout, getToken, requireAuth, getRole, getUser };
 })();
