@@ -192,7 +192,7 @@
       if (result.success) {
         window.location.href = 'index.html';
       } else {
-        errorEl.textContent = 'Código incorrecto o expirado. Intenta de nuevo.';
+        errorEl.textContent = result.error || 'Código incorrecto o expirado. Intenta de nuevo.';
         errorEl.classList.remove('hidden');
         btn.disabled = false;
         btnText.textContent = 'Verificar código';

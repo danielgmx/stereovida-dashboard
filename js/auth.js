@@ -34,18 +34,23 @@ const Auth = (() => {
   // Paso 2: verificar código OTP e iniciar sesión
   async function loginWithOtp(otpId, code) {
     try {
+      console.log('loginWithOtp:', { otpId, code });
       const res = await fetch(`${PB_URL}/api/collections/_superusers/auth-with-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ otpId, password: code }),
       });
-      if (!res.ok) return { success: false };
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        console.error('OTP error:', res.status, errData);
+        return { success: false, error: errData.message || JSON.stringify(errData) };
+      }
       const data = await res.json();
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(MODEL_KEY, JSON.stringify(data.record ?? data.admin));
       return { success: true };
-    } catch {
-      return { success: false };
+    } catch (e) {
+      return { success: false, error: e.message };
     }
   }
 
