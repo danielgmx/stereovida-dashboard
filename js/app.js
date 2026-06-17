@@ -14,6 +14,7 @@ const Icons = {
   plus:        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
   logout:      `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>`,
   recordings:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>`,
+  audioShows:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3z"/><path d="M3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>`,
   usuarios:    `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
   user_ph:     `<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
   // Placeholders (22×22)
@@ -52,6 +53,7 @@ const SECTIONS = {
   social:      { label: 'Redes Sociales',  icon: 'social',     module: () => SectionSocial },
   events:      { label: 'Eventos',         icon: 'events',     module: () => SectionEvents },
   promotions:  { label: 'Promociones',     icon: 'promotions', module: () => SectionPromotions },
+  audioShows:  { label: 'Shows de Audio',  icon: 'audioShows', module: () => SectionAudioShows },
   recordings:  { label: 'Grabaciones',     icon: 'recordings', module: () => SectionRecordings },
   usuarios:    { label: 'Usuarios',        icon: 'usuarios',   module: () => SectionUsuarios },
 };
@@ -65,6 +67,7 @@ const SECTION_ROLES = {
   social:     ['admin'],
   events:     ['admin', 'editor'],
   promotions: ['admin', 'editor'],
+  audioShows: ['admin', 'editor'],
   recordings: ['admin', 'editor'],
   usuarios:   ['admin'],
 };

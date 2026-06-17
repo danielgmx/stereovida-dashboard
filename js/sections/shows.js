@@ -1,4 +1,7 @@
 const SectionShows = (() => {
+  const WORKER_URL   = 'https://stereovida-upload.danielgomezortiz.workers.dev';
+  const WORKER_TOKEN = 'stereovida2024secure';
+
   const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
   const html = () => `
@@ -71,8 +74,22 @@ const SectionShows = (() => {
             <input type="text" name="name" value="${esc(show?.name ?? '')}" required />
           </div>
           <div class="field">
-            <label>URL de imagen</label>
-            <input type="url" name="image_url" value="${esc(show?.image_url ?? '')}" placeholder="https://..." />
+            <label>Imagen del show</label>
+            ${show?.image_url ? `
+              <div style="margin-bottom:10px;display:flex;align-items:center;gap:12px;">
+                <img src="${esc(show.image_url)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);" />
+                <span class="muted" style="font-size:12px;">Sube otra imagen para reemplazarla.</span>
+              </div>` : ''}
+            <input type="file" name="image_file" accept="image/*" ${isNew ? 'required' : ''} />
+            <div id="show-img-wrap" class="hidden" style="margin-top:10px;">
+              <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                <span style="font-size:12px;color:var(--text-muted);">Subiendo imagen…</span>
+                <span id="show-img-pct" style="font-size:12px;font-weight:700;color:var(--primary);">0%</span>
+              </div>
+              <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+                <div id="show-img-bar" style="height:100%;background:var(--primary);width:0%;border-radius:4px;transition:width 0.15s;"></div>
+              </div>
+            </div>
           </div>
           <div class="form-grid">
             <div class="field">
@@ -95,8 +112,8 @@ const SectionShows = (() => {
             </div>
           </div>
           <div class="field field-inline">
-            <label>Activo</label>
-            <input type="checkbox" name="is_active" ${show?.is_active !== false ? 'checked' : ''} />
+            <input type="checkbox" name="is_active" id="show-active" ${show?.is_active !== false ? 'checked' : ''} />
+            <label for="show-active">Activo</label>
           </div>
           <div class="form-actions">
             <button type="button" class="btn btn-ghost" onclick="SectionShows.closeModal()">Cancelar</button>
@@ -106,24 +123,66 @@ const SectionShows = (() => {
         </form>
       </div>`;
     document.getElementById('show-modal').classList.remove('hidden');
-    document.getElementById('show-form').addEventListener('submit', (e) => saveShow(e, show?.id ?? null));
+    document.getElementById('show-form').addEventListener('submit', (e) => saveShow(e, show?.id ?? null, show?.image_url ?? null));
   }
 
-  async function saveShow(e, id) {
+  async function saveShow(e, id, existingImageUrl) {
     e.preventDefault();
-    const form = e.target;
+    const form   = e.target;
     const status = document.getElementById('show-status');
-    const btn = form.querySelector('[type="submit"]');
+    const btn    = form.querySelector('[type="submit"]');
     btn.disabled = true;
+
+    let image_url = existingImageUrl;
+    const imageFile = form.image_file.files[0];
+
+    if (imageFile) {
+      const wrap = document.getElementById('show-img-wrap');
+      const bar  = document.getElementById('show-img-bar');
+      const pct  = document.getElementById('show-img-pct');
+      wrap.classList.remove('hidden');
+      try {
+        image_url = await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          const fd  = new FormData();
+          fd.append('file', imageFile);
+          xhr.upload.addEventListener('progress', ev => {
+            if (ev.lengthComputable) {
+              const p = Math.round(ev.loaded / ev.total * 100);
+              bar.style.width = p + '%';
+              pct.textContent = p + '%';
+            }
+          });
+          xhr.addEventListener('load', () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+              try { resolve(JSON.parse(xhr.responseText).url); }
+              catch { reject(new Error('Respuesta inválida del servidor')); }
+            } else {
+              reject(new Error(`Error al subir imagen (${xhr.status})`));
+            }
+          });
+          xhr.addEventListener('error', () => reject(new Error('Error de red al subir')));
+          xhr.open('POST', WORKER_URL);
+          xhr.setRequestHeader('X-Upload-Token', WORKER_TOKEN);
+          xhr.send(fd);
+        });
+        wrap.classList.add('hidden');
+      } catch (err) {
+        wrap.classList.add('hidden');
+        showStatus(status, err.message, 'error');
+        btn.disabled = false;
+        return;
+      }
+    }
 
     const checkedDays = [...form.querySelectorAll('[name="days"]:checked')].map(c => parseInt(c.value));
     const data = {
-      name: form.name.value.trim(),
-      image_url: form.image_url.value.trim(),
+      name:       form.name.value.trim(),
+      image_url:  image_url ?? '',
       start_time: form.start_time.value,
-      end_time: form.end_time.value,
-      days: checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
-      is_active: form.is_active.checked,
+      end_time:   form.end_time.value,
+      days:       checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
+      is_active:  form.is_active.checked,
     };
 
     try {
