@@ -111,6 +111,10 @@ const SectionShows = (() => {
                 </label>`).join('')}
             </div>
           </div>
+          <div class="field">
+            <label>Descripción del show</label>
+            <textarea name="description" rows="3" placeholder="Descripción breve del programa, conductor, dinámica…" style="resize:vertical;">${esc(show?.description ?? '')}</textarea>
+          </div>
           <div class="field field-inline">
             <input type="checkbox" name="is_active" id="show-active" ${show?.is_active !== false ? 'checked' : ''} />
             <label for="show-active">Activo</label>
@@ -181,8 +185,9 @@ const SectionShows = (() => {
       image_url:  image_url ?? '',
       start_time: form.start_time.value,
       end_time:   form.end_time.value,
-      days:       checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
-      is_active:  form.is_active.checked,
+      days:        checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
+      description: form.description.value.trim(),
+      is_active:   form.is_active.checked,
     };
 
     try {
