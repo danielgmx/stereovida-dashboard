@@ -55,7 +55,7 @@ const SectionNotifications = (() => {
         </div>
         <div class="list-card-actions">
           <span class="badge ${statusClass}">${statusLabel}</span>
-          ${n.status === 'pending' ? `<button class="btn-icon btn-danger" onclick="SectionNotifications.confirmDelete('${n.id}', '${esc(n.title)}')">${Icons.trash}</button>` : ''}
+          <button class="btn-icon btn-danger" onclick="SectionNotifications.confirmDelete('${n.id}', '${esc(n.title)}')">${Icons.trash}</button>
         </div>
       </div>`;
     }).join('');
@@ -111,6 +111,18 @@ const SectionNotifications = (() => {
             <input type="datetime-local" name="scheduled_at" id="notif-schedule-input"
               value="${localNow}" min="${localNow}" style="display:none" />
           </div>
+          <div class="field">
+            <label>Expiración <span style="color:var(--muted);font-weight:400">(desaparece del historial en el app)</span></label>
+            <select name="expires_hours">
+              <option value="0">Sin expiración</option>
+              <option value="1">1 hora</option>
+              <option value="6">6 horas</option>
+              <option value="12">12 horas</option>
+              <option value="24">24 horas</option>
+              <option value="48">48 horas</option>
+              <option value="168">7 días</option>
+            </select>
+          </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-ghost" onclick="SectionNotifications.closeModal()">Cancelar</button>
             <button type="submit" class="btn btn-primary">Guardar notificación</button>
@@ -146,12 +158,21 @@ const SectionNotifications = (() => {
       scheduledAt = new Date(raw).toISOString();
     }
 
+    const expHours = parseInt(form.get('expires_hours') || '0');
+    let expiresAt = '';
+    if (expHours > 0) {
+      const expDate = new Date(scheduledAt);
+      expDate.setHours(expDate.getHours() + expHours);
+      expiresAt = expDate.toISOString();
+    }
+
     try {
       await API.create('push_notifications', {
         title: form.get('title'),
         body: form.get('body'),
         promo_id: form.get('promo_id') || '',
         scheduled_at: scheduledAt,
+        expires_at: expiresAt,
         status: 'pending',
         device_count: 0,
       });
