@@ -14,18 +14,39 @@ const SectionNotifications = (() => {
 
   async function loadStats() {
     try {
-      const tokens = await API.list('device_tokens', 'perPage=1');
+      // Fetch all tokens to count unique devices (duplicates can exist from reinstalls)
+      const tokensRes = await API.list('device_tokens', 'perPage=500&fields=token');
+      const uniqueDevices = new Set((tokensRes?.items ?? []).map(t => t.token)).size;
+
       const pending = await API.list('push_notifications', 'perPage=1&filter=' + encodeURIComponent('status="pending"'));
+
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      const sentThisWeek = await API.list('push_notifications',
+        'perPage=1&filter=' + encodeURIComponent(`status="sent" && sent_at >= "${weekAgo}"`));
+      const weekCount = sentThisWeek?.totalItems ?? 0;
+      const weekLimit = 7;
+
       document.getElementById('notif-stats').innerHTML = `
         <div class="notif-stat-card">
-          <div class="notif-stat-num">${tokens?.totalItems ?? 0}</div>
+          <div class="notif-stat-num">${uniqueDevices}</div>
           <div class="notif-stat-label">Dispositivos registrados</div>
         </div>
         <div class="notif-stat-card">
           <div class="notif-stat-num">${pending?.totalItems ?? 0}</div>
           <div class="notif-stat-label">Programadas pendientes</div>
+        </div>
+        <div class="notif-stat-card" title="Límite: ${weekLimit} por semana">
+          <div class="notif-stat-num" style="color:${weekCount >= weekLimit ? 'var(--danger, #e55)' : 'inherit'}">${weekCount}/${weekLimit}</div>
+          <div class="notif-stat-label">Enviadas esta semana</div>
         </div>`;
     } catch {}
+  }
+
+  async function checkWeeklyLimit() {
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    const res = await API.list('push_notifications',
+      'perPage=1&filter=' + encodeURIComponent(`status="sent" && sent_at >= "${weekAgo}"`));
+    return (res?.totalItems ?? 0);
   }
 
   async function loadList() {
@@ -61,9 +82,16 @@ const SectionNotifications = (() => {
     }).join('');
   }
 
-  function openNew() { openModal(); }
+  async function openNew() {
+    const weekCount = await checkWeeklyLimit();
+    if (weekCount >= 7) {
+      alert(`Límite semanal alcanzado (${weekCount}/7 notificaciones enviadas esta semana).\nPuedes programar para la próxima semana.`);
+      return;
+    }
+    openModal(weekCount);
+  }
 
-  async function openModal() {
+  async function openModal(weekCount = 0) {
     let promos = [];
     try {
       const res = await API.list('promotions', 'filter=' + encodeURIComponent('is_active=true') + '&sort=title&perPage=100');
@@ -81,6 +109,7 @@ const SectionNotifications = (() => {
           <h2>Nueva notificación push</h2>
           <button class="modal-close" onclick="SectionNotifications.closeModal()">✕</button>
         </div>
+        <p style="font-size:0.82rem;color:var(--muted);margin:0 0 12px">Quedan ${7 - weekCount} de 7 notificaciones disponibles esta semana.</p>
         <p id="notif-status" class="status-msg hidden"></p>
         <form id="notif-form">
           <div class="field">
