@@ -163,9 +163,25 @@ async function publishAll() {
   btn.disabled = false;
 }
 
+async function loadSidebarLogo() {
+  try {
+    const res = await API.list('app_config', 'perPage=1');
+    const cfg = res?.items?.[0];
+    if (cfg?.logo) {
+      const url = API.fileUrl('app_config', cfg.id, cfg.logo);
+      const img = document.getElementById('sidebar-logo-img');
+      const text = document.getElementById('sidebar-logo-text');
+      img.src = url;
+      img.style.display = 'block';
+      text.style.display = 'none';
+    }
+  } catch {}
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   Auth.requireAuth();
   buildSidebar();
+  loadSidebarLogo();
 
   const initial = location.hash.slice(1);
   const firstAllowed = Object.keys(SECTIONS).find(id => canAccess(id)) || 'shows';
