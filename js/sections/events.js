@@ -85,6 +85,10 @@ const SectionEvents = (() => {
             <label>Link de mapa (Google Maps)</label>
             <input type="url" name="location_url" value="${esc(item?.location_url ?? '')}" placeholder="https://maps.google.com/..." />
           </div>
+          <div class="field">
+            <label>Link para comprar boletos (opcional)</label>
+            <input type="url" name="ticket_url" value="${esc(item?.ticket_url ?? '')}" placeholder="https://..." />
+          </div>
           <div class="field field-inline">
             <label>Activo</label>
             <input type="checkbox" name="is_active" ${item?.is_active !== false ? 'checked' : ''} />
@@ -115,6 +119,7 @@ const SectionEvents = (() => {
       category: form.category.value.trim(),
       description: form.description.value.trim(),
       location_url: form.location_url.value.trim(),
+      ticket_url: form.ticket_url.value.trim(),
       is_active: form.is_active.checked,
     };
 
