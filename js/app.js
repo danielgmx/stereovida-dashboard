@@ -10,6 +10,7 @@ const Icons = {
   promotions:  `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H2v10l9.29 9.29c.94.94 2.48.94 3.42 0l6.58-6.58c.94-.94.94-2.48 0-3.42L12 2Z"/><path d="M7 7h.01"/></svg>`,
   sliders:     `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="12" x="2" y="6" rx="2"/><path d="M8 21h8"/><path d="M12 18v3"/><circle cx="7" cy="12" r="1"/></svg>`,
   top10:       `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>`,
+  news:        `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>`,
   // Actions (14×14)
   edit:        `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>`,
   trash:       `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`,
@@ -56,6 +57,7 @@ const SECTIONS = {
   social:      { label: 'Redes Sociales',  icon: 'social',     module: () => SectionSocial },
   sliders:     { label: 'Sliders del sitio', icon: 'sliders',  module: () => SectionSliders },
   top10:       { label: 'Top 10 Music',      icon: 'top10',    module: () => SectionTop10 },
+  news:        { label: 'Noticias',          icon: 'news',     module: () => SectionNews },
   events:      { label: 'Eventos',         icon: 'events',     module: () => SectionEvents },
   promotions:  { label: 'Promociones',     icon: 'promotions', module: () => SectionPromotions },
   audioShows:  { label: 'Shows de Audio',  icon: 'audioShows', module: () => SectionAudioShows },
@@ -73,6 +75,7 @@ const SECTION_ROLES = {
   social:     ['admin'],
   sliders:    ['admin', 'editor'],
   top10:      ['admin', 'editor'],
+  news:       ['admin', 'editor'],
   events:     ['admin', 'editor'],
   promotions: ['admin', 'editor'],
   audioShows: ['admin', 'editor'],
