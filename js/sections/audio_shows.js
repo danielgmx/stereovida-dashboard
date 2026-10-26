@@ -6,16 +6,18 @@ const SectionAudioShows = (() => {
       <h1>Shows de Audio</h1>
       <button class="btn btn-primary" onclick="SectionAudioShows.openNew()">${Icons.plus} Nuevo show</button>
     </div>
-    <p class="muted" style="margin-bottom:16px;font-size:13px;">Define los shows (series) a los que pertenecen tus grabaciones. Cada show tiene su propia imagen y descripción.</p>
+    <p class="muted" style="margin-bottom:16px;font-size:13px;">Cada show es un podcast: su nombre, portada, descripción y tema aparecen en el sitio web (stereovida1023.com/podcasts/). Los episodios son las «Grabaciones»: al crear una grabación eliges a qué show pertenece. Los cambios se ven en el sitio al momento.</p>
     <div id="audio-shows-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="audio-shows-modal" class="modal hidden"></div>`;
 
   async function load() {
     let res;
-    try { res = await API.list('audio_shows', 'sort=name&perPage=100'); } catch (e) {
+    try { res = await API.list('audio_shows', 'sort=sort_order,name&perPage=100'); } catch (e) {
       document.getElementById('audio-shows-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
     }
     const items = res?.items ?? [];
+    const counts = {};
+    try { for (const r of (await API.list('recording', 'perPage=500&fields=audio_show'))?.items ?? []) counts[r.audio_show] = (counts[r.audio_show] || 0) + 1; } catch {}
     const el = document.getElementById('audio-shows-list');
     if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay shows de audio registrados. Crea uno para empezar.</p>'; return; }
     el.innerHTML = items.map(s => `
@@ -25,7 +27,8 @@ const SectionAudioShows = (() => {
         </div>
         <div class="list-card-body">
           <div class="list-card-title">${esc(s.name)}</div>
-          <div class="list-card-meta">${s.description ? esc(s.description).substring(0, 90) + (s.description.length > 90 ? '…' : '') : '<span style="opacity:0.5">Sin descripción</span>'}</div>
+          <div class="list-card-meta">${[s.topic && esc(s.topic), `${counts[s.id] || 0} episodio${(counts[s.id] || 0) === 1 ? '' : 's'}`, s.slug && `/podcasts/${esc(s.slug)}/`].filter(Boolean).join(' · ')}</div>
+          <div class="list-card-meta" style="opacity:.75">${s.description ? esc(s.description).substring(0, 90) + (s.description.length > 90 ? '…' : '') : '<span style="opacity:0.5">Sin descripción</span>'}</div>
         </div>
         <div class="list-card-actions">
           <span class="badge ${s.is_active !== false ? 'badge-on' : 'badge-off'}">${s.is_active !== false ? 'Activo' : 'Inactivo'}</span>
@@ -34,6 +37,8 @@ const SectionAudioShows = (() => {
         </div>
       </div>`).join('');
   }
+
+  const slugifyShow = (t) => t.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
   function openNew() { openModal(null); }
   async function openEdit(id) { openModal(await API.get('audio_shows', id)); }
@@ -68,6 +73,17 @@ const SectionAudioShows = (() => {
               <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
                 <div id="img-upload-bar" style="height:100%;background:var(--primary);width:0%;border-radius:4px;transition:width 0.15s;"></div>
               </div>
+            </div>
+          </div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Tema (filtro en el teléfono)</label>
+              <input type="text" name="topic" list="audio-show-topics" value="${esc(item?.topic ?? '')}" placeholder="Ej. Tecnología" />
+              <datalist id="audio-show-topics"><option>Meditación</option><option>Humor</option><option>Misterio</option><option>Tecnología</option><option>Cultura</option><option>Curiosidades</option><option>Música</option><option>Entrevistas</option><option>Noticias</option></datalist>
+            </div>
+            <div class="field">
+              <label>Posición en la lista (1 = primero)</label>
+              <input type="number" name="sort_order" min="1" step="1" value="${esc(item?.sort_order ?? '')}" placeholder="Al final" />
             </div>
           </div>
           <div class="field">
@@ -142,8 +158,13 @@ const SectionAudioShows = (() => {
       name:        form.name.value.trim(),
       description: form.description.value.trim(),
       cover_url:   cover_url ?? '',
+      topic:       form.topic.value.trim(),
       is_active:   form.is_active.checked,
     };
+    const ord = parseInt(form.sort_order.value, 10);
+    if (ord > 0) fields.sort_order = ord;
+    // La dirección del podcast en el sitio (/podcasts/<slug>/) se fija al crearlo y ya no cambia, para no romper enlaces.
+    if (!id) fields.slug = slugifyShow(fields.name);
 
     try {
       if (id) await API.update('audio_shows', id, fields);
