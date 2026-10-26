@@ -5,28 +5,53 @@ const SectionRecordings = (() => {
 
   let _audioShows = [];
 
+  let items = [], showFilter = '', query = '';
+  const selected = new Set();
+
   const html = () => `
     <div class="section-header">
       <h1>Grabaciones</h1>
       <button class="btn btn-primary" onclick="SectionRecordings.openNew()">${Icons.plus} Agregar grabación</button>
     </div>
+    <div class="nw-bar">
+      <div class="nw-tabs" id="rec-tabs"></div>
+      <input type="search" id="rec-q" placeholder="Buscar por título" />
+    </div>
+    <div class="nw-bulk" id="rec-bulk"></div>
     <div id="recordings-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
     <div id="recordings-modal" class="modal hidden"></div>`;
 
+  // Nombre del show de una grabación (el del campo «show» o, si no lo tiene, su categoría).
+  const showOf = (r) => r.expand?.audio_show?.name ?? (r.category ? CATEGORIES[r.category] ?? r.category : '');
+
   async function load() {
-    let res;
-    try { res = await API.list('recording', 'sort=-created&perPage=50&expand=audio_show'); } catch (e) {
-      document.getElementById('recordings-list').innerHTML = `<p class="muted empty-state">Error al cargar: ${e.message}</p>`; return;
-    }
-    const items = res?.items ?? [];
     const el = document.getElementById('recordings-list');
-    if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay grabaciones registradas.</p>'; return; }
-    el.innerHTML = items.map(r => {
+    try { items = (await API.list('recording', 'sort=-created&perPage=500&expand=audio_show'))?.items ?? []; }
+    catch (e) { el.innerHTML = `<p class="muted empty-state">Error al cargar: ${esc(e.message)}</p>`; return; }
+    selected.clear();
+    const q = document.getElementById('rec-q');
+    q.value = query;
+    q.oninput = () => { query = q.value.trim().toLowerCase(); paint(); };
+    if (showFilter && !items.some((r) => showOf(r) === showFilter)) showFilter = '';
+    paint();
+  }
+
+  function paint() {
+    const el = document.getElementById('recordings-list');
+    const names = [...new Set(items.map(showOf).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+    const count = (n) => items.filter((r) => !n || showOf(r) === n).length;
+    document.getElementById('rec-tabs').innerHTML = ['', ...names].map((n) =>
+      `<button class="nw-tab ${showFilter === n ? 'is-on' : ''}" onclick="SectionRecordings.setShow('${esc(n).replace(/'/g, '&#39;')}')">${esc(n || 'Todas')} <span>${count(n)}</span></button>`).join('');
+    const shown = items.filter((r) => (!showFilter || showOf(r) === showFilter) && (!query || r.title.toLowerCase().includes(query)));
+    if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay grabaciones registradas.</p>'; renderBulk([]); return; }
+    if (!shown.length) { el.innerHTML = '<p class="muted empty-state">No hay grabaciones con ese filtro.</p>'; renderBulk([]); return; }
+    el.innerHTML = shown.map(r => {
       const show     = r.expand?.audio_show;
       const coverImg = show?.cover_url || r.cover_url;
-      const showName = show?.name ?? (r.category ? CATEGORIES[r.category] ?? esc(r.category) : '');
+      const showName = showOf(r);
       return `
-        <div class="list-card">
+        <div class="list-card ${selected.has(r.id) ? 'is-sel' : ''}">
+          <input type="checkbox" class="rec-chk" data-id="${r.id}" ${selected.has(r.id) ? 'checked' : ''} aria-label="Seleccionar" style="flex:none" />
           <div class="list-card-img">
             ${coverImg ? `<img src="${esc(coverImg)}" alt="${esc(r.title)}" />` : `<div class="img-placeholder">${Icons.mic}</div>`}
           </div>
@@ -40,10 +65,52 @@ const SectionRecordings = (() => {
           <div class="list-card-actions">
             <span class="badge ${r.is_active !== false ? 'badge-on' : 'badge-off'}">${r.is_active !== false ? 'Activo' : 'Inactivo'}</span>
             <button class="btn-icon" onclick="SectionRecordings.openEdit('${r.id}')">${Icons.edit}</button>
-            <button class="btn-icon btn-danger" onclick="SectionRecordings.confirmDelete('${r.id}', '${esc(r.title)}')">${Icons.trash}</button>
+            <button class="btn-icon btn-danger" onclick="SectionRecordings.confirmDelete('${r.id}', '${esc(r.title).replace(/'/g, '&#39;')}')">${Icons.trash}</button>
           </div>
         </div>`;
     }).join('');
+    el.querySelectorAll('.rec-chk').forEach((c) => c.addEventListener('change', () => {
+      c.checked ? selected.add(c.dataset.id) : selected.delete(c.dataset.id);
+      c.closest('.list-card').classList.toggle('is-sel', c.checked); renderBulk(shown);
+    }));
+    renderBulk(shown);
+  }
+
+  // Barra de acciones en bloque: seleccionar todas las que se ven, eliminar o activar/desactivar varias a la vez.
+  function renderBulk(shown) {
+    const bar = document.getElementById('rec-bulk'), n = selected.size;
+    const allOn = shown.length && shown.every((r) => selected.has(r.id));
+    bar.innerHTML = shown.length ? `
+      <label class="nw-all"><input type="checkbox" id="rec-all" ${allOn ? 'checked' : ''} /> Seleccionar todas las que se ven (${shown.length})</label>
+      ${n ? `<span class="nw-count">${n} seleccionada${n !== 1 ? 's' : ''}</span>
+      <button class="btn btn-danger-solid" onclick="SectionRecordings.bulkDelete()">Eliminar seleccionadas</button>
+      <button class="btn btn-ghost" onclick="SectionRecordings.bulkActive(true)">Activar</button>
+      <button class="btn btn-ghost" onclick="SectionRecordings.bulkActive(false)">Desactivar</button>
+      <button class="btn btn-ghost" onclick="SectionRecordings.clearSel()">Cancelar</button>` : ''}` : '';
+    const all = document.getElementById('rec-all');
+    if (all) all.addEventListener('change', (e) => { shown.forEach((r) => (e.target.checked ? selected.add(r.id) : selected.delete(r.id))); paint(); });
+  }
+
+  const setShow = (n) => { showFilter = n; selected.clear(); paint(); };
+  const clearSel = () => { selected.clear(); paint(); };
+
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (!ids.length) return;
+    const names = ids.slice(0, 5).map((id) => '· ' + items.find((r) => r.id === id)?.title).join('\n');
+    if (!confirm(`¿Eliminar ${ids.length} grabaci${ids.length === 1 ? 'ón' : 'ones'}?\n\n${names}${ids.length > 5 ? `\n· y ${ids.length - 5} más` : ''}\n\nNo se puede deshacer.`)) return;
+    let fail = 0;
+    for (const id of ids) { try { await API.remove('recording', id); } catch { fail++; } }
+    if (fail) alert(`No se pudieron eliminar ${fail} grabación(es).`);
+    await load(); updatePendingCount();
+  }
+  async function bulkActive(active) {
+    const ids = [...selected];
+    if (!ids.length) return;
+    let fail = 0;
+    for (const id of ids) { try { await API.update('recording', id, { is_active: active }); } catch { fail++; } }
+    if (fail) alert(`No se pudieron actualizar ${fail} grabación(es).`);
+    await load();
   }
 
   function openNew() { openModal(null); }
@@ -240,5 +307,5 @@ const SectionRecordings = (() => {
     API.remove('recording', id).then(() => load());
   }
 
-  return { html, load, openNew, openEdit, closeModal, confirmDelete, onShowChange };
+  return { html, load, openNew, openEdit, closeModal, confirmDelete, onShowChange, setShow, clearSel, bulkDelete, bulkActive };
 })();

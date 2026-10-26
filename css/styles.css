@@ -365,3 +365,5 @@ input[type="file"] { background: none; border: none; padding: 0; color: var(--te
 .nw-meta { color: var(--text-muted); font-size: 12px; }
 @media (max-width: 900px) { .nw-top { grid-template-columns: 1fr; } }
 @media (max-width: 640px) { .nw-thumb { width: 56px; height: 40px; } .nw-bar input[type="search"] { width: 100%; } }
+.list-card { gap: 12px; }
+.list-card.is-sel { border-color: var(--primary); background: rgba(0,249,210,.06); }
