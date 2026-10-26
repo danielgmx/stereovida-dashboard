@@ -311,3 +311,24 @@ input[type="file"] { background: none; border: none; padding: 0; color: var(--te
 .sl-actions { position: sticky; bottom: 0; z-index: 5; display: flex; justify-content: flex-end; align-items: center; gap: 10px; padding: 14px 0; background: linear-gradient(transparent, var(--bg) 35%); }
 .sl-actions .status-msg { margin-right: auto; }
 @media (max-width: 900px) { .sl-grid { grid-template-columns: 1fr; } }
+
+/* ── Top 10 Music ──────────────────────────────────────────────────────── */
+.t10-add { display: grid; gap: 12px; margin-bottom: 20px; max-width: 900px; }
+.t10-add h3 { font-size: 15px; font-weight: 700; }
+.t10-add textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; }
+.t10-add-row { display: flex; align-items: center; gap: 12px; }
+.t10-list { display: grid; gap: 8px; max-width: 900px; }
+.t10-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color .15s, opacity .15s; }
+.t10-row:hover { border-color: var(--primary); }
+.t10-drag { opacity: .4; }
+.t10-over { border-color: var(--primary); box-shadow: 0 -3px 0 var(--primary); }
+.t10-grip { cursor: grab; color: var(--text-muted); letter-spacing: -2px; user-select: none; padding: 0 2px; }
+.t10-n { width: 26px; text-align: center; font-weight: 800; font-size: 18px; color: var(--primary); }
+.t10-thumb { width: 96px; height: 54px; object-fit: cover; border-radius: 6px; background: #0A0E14; flex: none; }
+.t10-txt { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.t10-in { width: 100%; background: transparent; border: 1px solid transparent; border-radius: var(--radius-sm); padding: 3px 8px; color: var(--text); }
+.t10-in:hover, .t10-in:focus { background: var(--surface2); border-color: var(--border); outline: none; }
+.t10-in-title { font-weight: 700; font-size: 14px; }
+.t10-in-artist { font-size: 12.5px; color: var(--text-muted); }
+.t10-saved { border-color: var(--success) !important; }
+@media (max-width: 640px) { .t10-thumb { width: 64px; height: 36px; } .t10-row { gap: 8px; padding: 8px; } }

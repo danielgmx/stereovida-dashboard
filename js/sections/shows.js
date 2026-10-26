@@ -1,6 +1,5 @@
 const SectionShows = (() => {
-  const WORKER_URL   = 'https://stereovida-upload.danielgomezortiz.workers.dev';
-  const WORKER_TOKEN = 'stereovida2024secure';
+  const WORKER_URL = 'https://stereovida-upload.danielgomezortiz.workers.dev'; // la subida usa tu sesión del tablero, sin token fijo
 
   const DAYS = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
@@ -167,7 +166,7 @@ const SectionShows = (() => {
           });
           xhr.addEventListener('error', () => reject(new Error('Error de red al subir')));
           xhr.open('POST', WORKER_URL);
-          xhr.setRequestHeader('X-Upload-Token', WORKER_TOKEN);
+          xhr.setRequestHeader('Authorization', Auth.getToken());
           xhr.send(fd);
         });
         wrap.classList.add('hidden');
