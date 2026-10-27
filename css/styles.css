@@ -367,3 +367,8 @@ input[type="file"] { background: none; border: none; padding: 0; color: var(--te
 @media (max-width: 640px) { .nw-thumb { width: 56px; height: 40px; } .nw-bar input[type="search"] { width: 100%; } }
 .list-card { gap: 12px; }
 .list-card.is-sel { border-color: var(--primary); background: rgba(0,249,210,.06); }
+.sl-phone-wrap { display: grid; gap: 8px; justify-items: start; }
+.sl-phone { width: 260px; padding: 8px; border: 1px solid var(--border); border-radius: 22px; background: #0A0E14; }
+.sl-preview--phone { aspect-ratio: 1926 / 817; border-radius: 12px; border-style: solid; }
+.sl-preview--phone img { object-fit: contain; }
+.sl-card > .sl-preview--web { max-width: 760px; }

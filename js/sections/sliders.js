@@ -1,4 +1,4 @@
-// Sliders de la portada del sitio web (stereovida1023.com): banner web, banner móvil, enlace, orden y fechas.
+// Sliders de la portada del sitio web (stereovida1023.com): un solo banner (se ve igual en computadora y en teléfono), enlace, orden y fechas.
 const SectionSliders = (() => {
   const today = () => new Date().toLocaleDateString('en-CA', { timeZone: 'America/Chicago' });
   const day = (v) => (v || '').slice(0, 10);
@@ -16,7 +16,7 @@ const SectionSliders = (() => {
       <h1>Sliders del sitio</h1>
       <button class="btn btn-primary" onclick="SectionSliders.openNew()">${Icons.plus} Nuevo slider</button>
     </div>
-    <p class="muted" style="margin-bottom:16px;font-size:13px;">Son los banners grandes de la portada de stereovida1023.com. Se muestran en el orden de esta lista. <strong>Banner web:</strong> 1926×817 px (proporción 2,36:1). <strong>Banner móvil</strong> (opcional, para teléfono): 1080×900 px o 1080×1350 px; si no lo subes, en teléfono se recorta el banner web. Si no hay ninguno activo, el sitio usa los banners de respaldo.</p>
+    <p class="muted" style="margin-bottom:16px;font-size:13px;">Son los banners grandes de la portada de stereovida1023.com. Se muestran en el orden de esta lista. Cada banner mide <strong>1926×817 px</strong> (proporción 2,36:1) y es el mismo en computadora y en teléfono. Si no hay ninguno activo, el sitio usa los banners de respaldo.</p>
     <div id="sliders-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>`;
 
   let items = [];
@@ -27,16 +27,14 @@ const SectionSliders = (() => {
     if (!items.length) { el.innerHTML = '<p class="muted empty-state">No hay sliders. Crea uno para empezar.</p>'; return; }
     el.innerHTML = items.map((s, i) => {
       const web = s.image_web ? API.fileUrl('sliders', s.id, s.image_web) : '';
-      const mob = s.image_mobile ? API.fileUrl('sliders', s.id, s.image_mobile) : '';
       const [label, cls] = state(s);
       const dates = [day(s.starts_at) && `desde ${day(s.starts_at)}`, day(s.ends_at) && `hasta ${day(s.ends_at)}`].filter(Boolean).join(' · ');
       return `
       <div class="list-card">
         <div class="list-card-img wide" style="width:140px;height:60px">${web ? `<img src="${esc(web)}" alt="${esc(s.name)}" />` : `<div class="img-placeholder">${Icons.image_ph}</div>`}</div>
-        ${mob ? `<div class="list-card-img" style="width:48px;height:60px"><img src="${esc(mob)}" alt="Móvil" /></div>` : ''}
         <div class="list-card-body">
           <div class="list-card-title">${esc(s.name)}</div>
-          <div class="list-card-meta">#${i + 1}${dates ? ' · ' + esc(dates) : ''}${s.link ? ' · con enlace' : ''}${mob ? ' · con banner móvil' : ''}</div>
+          <div class="list-card-meta">#${i + 1}${dates ? ' · ' + esc(dates) : ''}${s.link ? ' · con enlace' : ''}</div>
         </div>
         <div class="list-card-actions">
           <span class="badge ${cls}">${esc(label)}</span>
@@ -68,11 +66,10 @@ const SectionSliders = (() => {
   async function openEdit(id) { openEditor(await API.get('sliders', id)); }
   function back() { navigate('sliders'); }
 
-  // Editor en página completa (no flotante): vista previa de cómo se ve en computadora y en teléfono.
+  // Editor en página completa (no flotante): un solo banner, con vista previa de cómo se ve en computadora y en teléfono.
   function openEditor(item) {
     const isNew = !item;
     const web = item?.image_web ? API.fileUrl('sliders', item.id, item.image_web) : '';
-    const mob = item?.image_mobile ? API.fileUrl('sliders', item.id, item.image_mobile) : '';
     document.getElementById('main-content').innerHTML = `
       <div class="section-header">
         <div class="sl-head">
@@ -81,30 +78,19 @@ const SectionSliders = (() => {
         </div>
       </div>
       <form id="sliders-form" class="sl-editor">
-        <div class="sl-grid">
-          <section class="card sl-card">
-            <h3>Banner para computadora ${isNew ? '<span class="sl-req">obligatorio</span>' : ''}</h3>
-            <p class="muted">1926×817 px (proporción 2,36:1). JPG, PNG o WebP, hasta 8 MB.</p>
-            <div class="sl-preview sl-preview--web" id="sl-prev-web">${web ? `<img src="${esc(web)}" alt="" />` : '<span class="muted">Aún no hay imagen</span>'}</div>
-            <p class="sl-size muted" id="sl-web-info"></p>
+        <section class="card sl-card" style="max-width:none;">
+          <h3>Banner ${isNew ? '<span class="sl-req">obligatorio</span>' : ''}</h3>
+          <p class="muted">Un solo banner para computadora y teléfono: <strong>1926×817 px</strong> (proporción 2,36:1). JPG, PNG o WebP, hasta 8 MB. En el teléfono se ve completo y más pequeño, así que conviene que el texto sea grande y quede lejos de los bordes.</p>
+          <div class="sl-preview sl-preview--web" id="sl-prev-web">${web ? `<img src="${esc(web)}" alt="" />` : '<span class="muted">Aún no hay imagen</span>'}</div>
+          <p class="sl-size muted" id="sl-web-info"></p>
+          <div class="sl-row">
             <label class="btn btn-ghost sl-file">${web ? 'Cambiar imagen' : 'Elegir imagen'}<input type="file" name="image_web" accept="image/jpeg,image/png,image/webp" ${isNew ? 'required' : ''} hidden /></label>
-          </section>
-          <section class="card sl-card">
-            <h3>Banner para teléfono <span class="muted">(opcional)</span></h3>
-            <p class="muted">1080×900 px o 1080×1350 px. Si no subes uno, en el teléfono se muestra el banner de computadora recortado.</p>
-            <div class="sl-preview sl-preview--mobile" id="sl-prev-mob"></div>
-            <p class="sl-size muted" id="sl-mob-info"></p>
-            <div class="sl-row">
-              <label class="btn btn-ghost sl-file">Elegir imagen<input type="file" name="image_mobile" accept="image/jpeg,image/png,image/webp" hidden /></label>
-              <button type="button" class="btn btn-ghost hidden" id="sl-mob-remove">Quitar banner de teléfono</button>
-            </div>
-            <div class="field sl-focus" id="sl-focus-box">
-              <label>Qué parte se ve en el teléfono</label>
-              <input type="range" name="focus" min="0" max="100" value="${esc(item?.focus ?? 50)}" />
-              <div class="sl-scale muted"><span>Izquierda</span><span>Centro</span><span>Derecha</span></div>
-            </div>
-          </section>
-        </div>
+          </div>
+          <div class="sl-phone-wrap">
+            <span class="muted" style="font-size:12px;">Así se verá en un teléfono:</span>
+            <div class="sl-phone"><div class="sl-preview sl-preview--phone" id="sl-prev-phone"></div></div>
+          </div>
+        </section>
         <div class="sl-grid">
           <section class="card sl-card">
             <h3>Información</h3>
@@ -150,49 +136,34 @@ const SectionSliders = (() => {
       </form>`;
     const form = document.getElementById('sliders-form');
     form.addEventListener('submit', (e) => save(e, item));
-    wirePreview(form, { web, mob });
+    wirePreview(form, { web });
   }
 
-  // Vista previa en vivo: imagen elegida, tamaño detectado y recorte en teléfono según la posición.
+  // Vista previa en vivo: imagen elegida, tamaño detectado y cómo se ve en un teléfono (completa, sin recorte).
   function wirePreview(form, current) {
-    const prevWeb = document.getElementById('sl-prev-web'), prevMob = document.getElementById('sl-prev-mob');
-    const webInfo = document.getElementById('sl-web-info'), mobInfo = document.getElementById('sl-mob-info');
-    const rm = document.getElementById('sl-mob-remove'), focusBox = document.getElementById('sl-focus-box');
-    const st = { web: current.web, mob: current.mob, removeMob: false };
-    const info = (el, url, kind) => {
-      if (!url) { el.textContent = ''; return; }
+    const prevWeb = document.getElementById('sl-prev-web'), prevPhone = document.getElementById('sl-prev-phone');
+    const webInfo = document.getElementById('sl-web-info');
+    let web = current.web;
+    const info = (url) => {
+      if (!url) { webInfo.textContent = ''; return; }
       const im = new Image();
       im.onload = () => {
         const r = im.naturalWidth / im.naturalHeight;
         let msg = `${im.naturalWidth}×${im.naturalHeight} px`, ok = true;
-        if (kind === 'web' && (Math.abs(r - 2.357) > 0.12 || im.naturalWidth < 1200)) { ok = false; msg += ' · no es 1926×817: se recortará un poco'; }
-        if (kind === 'mob' && (r < 0.7 || r > 1.3)) { ok = false; msg += ' · se recomienda 1080×900 o 1080×1350'; }
-        el.textContent = (ok ? '✓ ' : '⚠ ') + msg; el.classList.toggle('sl-warn', !ok);
+        if (Math.abs(r - 2.357) > 0.12 || im.naturalWidth < 1200) { ok = false; msg += ' · no es 1926×817: se verá con bandas o recortado'; }
+        webInfo.textContent = (ok ? '✓ ' : '⚠ ') + msg; webInfo.classList.toggle('sl-warn', !ok);
       };
       im.src = url;
     };
     const paint = () => {
-      const focus = form.focus.value;
-      prevWeb.innerHTML = st.web ? `<img src="${esc(st.web)}" alt="" />` : '<span class="muted">Aún no hay imagen</span>';
-      const mob = st.removeMob ? '' : st.mob;
-      if (mob) prevMob.innerHTML = `<img class="sl-mob-own" src="${esc(mob)}" alt="" />`;
-      else if (st.web) prevMob.innerHTML = `<img src="${esc(st.web)}" alt="" style="object-position:${focus}% 50%" />`;
-      else prevMob.innerHTML = '<span class="muted">Sin imagen</span>';
-      focusBox.classList.toggle('hidden', !!mob);
-      rm.classList.toggle('hidden', !(st.mob && !st.removeMob));
-      prevMob.dataset.note = mob ? 'Así se verá en el teléfono' : 'Así se verá en el teléfono (recortado)';
+      const html = web ? `<img src="${esc(web)}" alt="" />` : '<span class="muted">Aún no hay imagen</span>';
+      prevWeb.innerHTML = html; prevPhone.innerHTML = web ? `<img src="${esc(web)}" alt="" />` : '<span class="muted">Sin imagen</span>';
     };
     form.image_web.addEventListener('change', () => {
       const f = form.image_web.files[0]; if (!f) return;
-      st.web = URL.createObjectURL(f); info(webInfo, st.web, 'web'); paint();
+      web = URL.createObjectURL(f); info(web); paint();
     });
-    form.image_mobile.addEventListener('change', () => {
-      const f = form.image_mobile.files[0]; if (!f) return;
-      st.mob = URL.createObjectURL(f); st.removeMob = false; info(mobInfo, st.mob, 'mob'); paint();
-    });
-    rm.addEventListener('click', () => { st.removeMob = true; form.image_mobile.value = ''; mobInfo.textContent = ''; form._removeMobile = true; paint(); });
-    form.focus.addEventListener('input', paint);
-    info(webInfo, current.web, 'web'); info(mobInfo, current.mob, 'mob'); paint();
+    info(web); paint();
   }
 
   async function save(e, item) {
@@ -207,7 +178,6 @@ const SectionSliders = (() => {
     fd.append('link', form.link.value.trim());
     fd.append('starts_at', form.starts_at.value);
     fd.append('ends_at', form.ends_at.value);
-    fd.append('focus', form.focus.value === '' ? '50' : form.focus.value);
     fd.append('is_active', form.is_active.checked ? 'true' : 'false');
     if (!id) {
       fd.append('is_published', 'false');
@@ -215,8 +185,6 @@ const SectionSliders = (() => {
       fd.append('sort_order', String(last + 1));
     }
     if (form.image_web.files[0]) fd.append('image_web', form.image_web.files[0]);
-    if (form.image_mobile.files[0]) fd.append('image_mobile', form.image_mobile.files[0]);
-    else if (form._removeMobile) fd.append('image_mobile', '');
     try {
       const res = await fetch(`${PB_URL}/api/collections/sliders/records${id ? '/' + id : ''}`, {
         method: id ? 'PATCH' : 'POST',
