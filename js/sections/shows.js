@@ -111,8 +111,27 @@ const SectionShows = (() => {
             </div>
           </div>
           <div class="field">
-            <label>Descripción del show</label>
+            <label>Descripción del show (para la app)</label>
             <textarea name="description" rows="3" placeholder="Descripción breve del programa, conductor, dinámica…" style="resize:vertical;">${esc(show?.description ?? '')}</textarea>
+            <span class="muted" style="font-size:12px;">Texto corto que ve la gente en la app.</span>
+          </div>
+          <div class="field-group" style="border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:grid;gap:14px;">
+            <div>
+              <strong style="font-size:14px;">Para el sitio web (página «Locutores»)</strong>
+              <div class="muted" style="font-size:12px;margin-top:2px;">Si dejas la biografía vacía, este show no aparece en la página de Locutores.</div>
+            </div>
+            <div class="field">
+              <label>Nombre del locutor</label>
+              <input type="text" name="host_name" value="${esc(show?.host_name ?? '')}" placeholder="Ej. Joanna de la Garza" />
+            </div>
+            <div class="field">
+              <label>Biografía para el sitio web</label>
+              <textarea name="bio_web" rows="9" placeholder="Escribe la biografía. Separa los párrafos con una línea en blanco." style="resize:vertical;">${esc(show?.bio_web ?? '')}</textarea>
+            </div>
+            <div class="field">
+              <label>Frase final (opcional)</label>
+              <input type="text" name="host_tagline" value="${esc(show?.host_tagline ?? '')}" placeholder="Ej. Chuy Cortez… de lunes a viernes, de 4 a 7 de la tarde." />
+            </div>
           </div>
           <div class="field field-inline">
             <input type="checkbox" name="is_active" id="show-active" ${show?.is_active !== false ? 'checked' : ''} />
@@ -186,6 +205,9 @@ const SectionShows = (() => {
       end_time:   form.end_time.value,
       days:        checkedDays.length ? checkedDays.map(d => DAYS[d]).join(', ') : '',
       description: form.description.value.trim(),
+      host_name:   form.host_name.value.trim(),
+      bio_web:     form.bio_web.value.trim(),
+      host_tagline: form.host_tagline.value.trim(),
       is_active:   form.is_active.checked,
     };
 
