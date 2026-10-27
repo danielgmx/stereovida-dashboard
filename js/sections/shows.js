@@ -8,8 +8,7 @@ const SectionShows = (() => {
       <h1>Programación</h1>
       <button class="btn btn-primary" onclick="SectionShows.openNew()">${Icons.plus} Agregar show</button>
     </div>
-    <div id="shows-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>
-    <div id="show-modal" class="modal hidden"></div>`;
+    <div id="shows-list" class="card-list"><div class="loading-placeholder">Cargando...</div></div>`;
 
   async function load() {
     let res;
@@ -50,102 +49,122 @@ const SectionShows = (() => {
     return [];
   }
 
-  function openNew() { openModal(null); }
+  function openNew() { openEditor(null); }
 
-  async function openEdit(id) {
-    const show = await API.get('shows', id);
-    openModal(show);
-  }
+  async function openEdit(id) { openEditor(await API.get('shows', id)); }
 
-  function openModal(show) {
+  function back() { navigate('shows'); }
+
+  // Editor en página completa (no flotante): datos del programa a la izquierda; textos para la app y para el sitio web a la derecha.
+  function openEditor(show) {
     const isNew = !show;
     const days = parseDaysFromRecord(show?.days);
-    document.getElementById('show-modal').innerHTML = `
-      <div class="modal-backdrop" onclick="SectionShows.closeModal()"></div>
-      <div class="modal-box">
-        <div class="modal-header">
-          <h2>${isNew ? 'Nuevo show' : 'Editar show'}</h2>
-          <button class="modal-close" onclick="SectionShows.closeModal()">✕</button>
+    document.getElementById('main-content').innerHTML = `
+      <div class="section-header">
+        <div class="sl-head">
+          <button type="button" class="btn btn-ghost" onclick="SectionShows.back()">← Regresar a la lista</button>
+          <h1>${isNew ? 'Nuevo show' : esc(show.name)}</h1>
         </div>
-        <form id="show-form">
-          <div class="field">
-            <label>Nombre del show</label>
-            <input type="text" name="name" value="${esc(show?.name ?? '')}" required />
-          </div>
-          <div class="field">
-            <label>Imagen del show</label>
-            ${show?.image_url ? `
-              <div style="margin-bottom:10px;display:flex;align-items:center;gap:12px;">
-                <img src="${esc(show.image_url)}" style="width:72px;height:72px;object-fit:cover;border-radius:8px;border:1px solid var(--border);" />
-                <span class="muted" style="font-size:12px;">Sube otra imagen para reemplazarla.</span>
-              </div>` : ''}
-            <input type="file" name="image_file" accept="image/*" ${isNew ? 'required' : ''} />
-            <div id="show-img-wrap" class="hidden" style="margin-top:10px;">
-              <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
-                <span style="font-size:12px;color:var(--text-muted);">Subiendo imagen…</span>
-                <span id="show-img-pct" style="font-size:12px;font-weight:700;color:var(--primary);">0%</span>
+      </div>
+      <form id="show-form" class="sl-editor">
+        <div class="sl-grid">
+          <div style="display:grid;gap:20px;align-content:start;">
+            <section class="card sl-card">
+              <h3>Datos del programa</h3>
+              <div class="field">
+                <label>Nombre del show</label>
+                <input type="text" name="name" value="${esc(show?.name ?? '')}" required />
               </div>
-              <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
-                <div id="show-img-bar" style="height:100%;background:var(--primary);width:0%;border-radius:4px;transition:width 0.15s;"></div>
+              <div class="field">
+                <label>Imagen del show ${isNew ? '*' : ''}</label>
+                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                  <div class="sl-preview" style="width:140px;aspect-ratio:1;border-radius:12px;flex:none;" id="show-img-prev">${show?.image_url ? `<img src="${esc(show.image_url)}" alt="" />` : '<span class="muted">Sin imagen</span>'}</div>
+                  <div style="display:grid;gap:8px;">
+                    <label class="btn btn-ghost sl-file">${show?.image_url ? 'Cambiar imagen' : 'Elegir imagen'}<input type="file" name="image_file" accept="image/*" ${isNew ? 'required' : ''} hidden /></label>
+                    <span class="muted" style="font-size:12px;">Cuadrada, de preferencia 800×800 px.</span>
+                  </div>
+                </div>
+                <div id="show-img-wrap" class="hidden" style="margin-top:10px;">
+                  <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+                    <span style="font-size:12px;color:var(--text-muted);">Subiendo imagen…</span>
+                    <span id="show-img-pct" style="font-size:12px;font-weight:700;color:var(--primary);">0%</span>
+                  </div>
+                  <div style="background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+                    <div id="show-img-bar" style="height:100%;background:var(--primary);width:0%;border-radius:4px;transition:width 0.15s;"></div>
+                  </div>
+                </div>
               </div>
-            </div>
+              <div class="form-grid">
+                <div class="field">
+                  <label>Hora inicio (HH:MM)</label>
+                  <input type="time" name="start_time" value="${esc(show?.start_time ?? '')}" required />
+                </div>
+                <div class="field">
+                  <label>Hora fin (HH:MM)</label>
+                  <input type="time" name="end_time" value="${esc(show?.end_time ?? '')}" required />
+                </div>
+              </div>
+              <div class="field">
+                <label>Días</label>
+                <div class="days-grid">
+                  ${DAYS.map((d, i) => `
+                    <label class="day-chip">
+                      <input type="checkbox" name="days" value="${i}" ${days.includes(i) ? 'checked' : ''} />
+                      <span>${d}</span>
+                    </label>`).join('')}
+                </div>
+                <span class="muted" style="font-size:12px;">Sin días marcados = todos los días.</span>
+              </div>
+              <div class="field field-inline">
+                <input type="checkbox" name="is_active" id="show-active" ${show?.is_active !== false ? 'checked' : ''} />
+                <label for="show-active">Activo (si lo desmarcas, no sale en la programación)</label>
+              </div>
+            </section>
+            <section class="card sl-card">
+              <h3>Para la app</h3>
+              <div class="field">
+                <label>Descripción del show</label>
+                <textarea name="description" rows="5" placeholder="Descripción breve del programa, conductor, dinámica…" style="resize:vertical;">${esc(show?.description ?? '')}</textarea>
+                <span class="muted" style="font-size:12px;">Texto corto que ve la gente en la app.</span>
+              </div>
+            </section>
           </div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Hora inicio (HH:MM)</label>
-              <input type="time" name="start_time" value="${esc(show?.start_time ?? '')}" required />
-            </div>
-            <div class="field">
-              <label>Hora fin (HH:MM)</label>
-              <input type="time" name="end_time" value="${esc(show?.end_time ?? '')}" required />
-            </div>
-          </div>
-          <div class="field">
-            <label>Días</label>
-            <div class="days-grid">
-              ${DAYS.map((d, i) => `
-                <label class="day-chip">
-                  <input type="checkbox" name="days" value="${i}" ${days.includes(i) ? 'checked' : ''} />
-                  <span>${d}</span>
-                </label>`).join('')}
-            </div>
-          </div>
-          <div class="field">
-            <label>Descripción del show (para la app)</label>
-            <textarea name="description" rows="3" placeholder="Descripción breve del programa, conductor, dinámica…" style="resize:vertical;">${esc(show?.description ?? '')}</textarea>
-            <span class="muted" style="font-size:12px;">Texto corto que ve la gente en la app.</span>
-          </div>
-          <div class="field-group" style="border:1px solid var(--border);border-radius:var(--radius);padding:16px;display:grid;gap:14px;">
-            <div>
-              <strong style="font-size:14px;">Para el sitio web (página «Locutores»)</strong>
-              <div class="muted" style="font-size:12px;margin-top:2px;">Si dejas la biografía vacía, este show no aparece en la página de Locutores.</div>
-            </div>
+          <section class="card sl-card">
+            <h3>Para el sitio web (página «Locutores»)</h3>
+            <p class="muted">Si dejas la biografía vacía, este show no aparece en la página de Locutores.</p>
             <div class="field">
               <label>Nombre del locutor</label>
               <input type="text" name="host_name" value="${esc(show?.host_name ?? '')}" placeholder="Ej. Joanna de la Garza" />
             </div>
             <div class="field">
               <label>Biografía para el sitio web</label>
-              <textarea name="bio_web" rows="9" placeholder="Escribe la biografía. Separa los párrafos con una línea en blanco." style="resize:vertical;">${esc(show?.bio_web ?? '')}</textarea>
+              <textarea name="bio_web" rows="16" placeholder="Escribe la biografía. Separa los párrafos con una línea en blanco." style="resize:vertical;line-height:1.55;">${esc(show?.bio_web ?? '')}</textarea>
+              <span class="muted" style="font-size:12px;" id="bio-count"></span>
             </div>
             <div class="field">
               <label>Frase final (opcional)</label>
               <input type="text" name="host_tagline" value="${esc(show?.host_tagline ?? '')}" placeholder="Ej. Chuy Cortez… de lunes a viernes, de 4 a 7 de la tarde." />
             </div>
-          </div>
-          <div class="field field-inline">
-            <input type="checkbox" name="is_active" id="show-active" ${show?.is_active !== false ? 'checked' : ''} />
-            <label for="show-active">Activo</label>
-          </div>
-          <div class="form-actions">
-            <button type="button" class="btn btn-ghost" onclick="SectionShows.closeModal()">Cancelar</button>
-            <button type="submit" class="btn btn-primary">${isNew ? 'Crear' : 'Guardar'}</button>
-            <span id="show-status" class="status-msg hidden"></span>
-          </div>
-        </form>
-      </div>`;
-    document.getElementById('show-modal').classList.remove('hidden');
-    document.getElementById('show-form').addEventListener('submit', (e) => saveShow(e, show?.id ?? null, show?.image_url ?? null));
+          </section>
+        </div>
+        <div class="sl-actions">
+          <span id="show-status" class="status-msg hidden"></span>
+          <button type="button" class="btn btn-ghost" onclick="SectionShows.back()">Cancelar</button>
+          <button type="submit" class="btn btn-primary">${isNew ? 'Crear show' : 'Guardar cambios'}</button>
+        </div>
+      </form>`;
+    const form = document.getElementById('show-form');
+    form.addEventListener('submit', (e) => saveShow(e, show?.id ?? null, show?.image_url ?? null));
+    // Vista previa de la imagen elegida y conteo de párrafos de la biografía
+    form.image_file.addEventListener('change', () => {
+      const f = form.image_file.files[0];
+      if (f) document.getElementById('show-img-prev').innerHTML = `<img src="${URL.createObjectURL(f)}" alt="" />`;
+    });
+    const count = () => {
+      const n = form.bio_web.value.trim().split(/\n\s*\n/).filter((t) => t.trim()).length;
+      document.getElementById('bio-count').textContent = form.bio_web.value.trim() ? `${n} párrafo${n !== 1 ? 's' : ''}` : '';
+    };
+    form.bio_web.addEventListener('input', count); count();
   }
 
   async function saveShow(e, id, existingImageUrl) {
@@ -214,9 +233,8 @@ const SectionShows = (() => {
     try {
       if (id) await API.update('shows', id, data);
       else await API.create('shows', { ...data, is_published: false });
-      closeModal();
-      load();
       updatePendingCount();
+      back();
     } catch {
       showStatus(status, 'Error al guardar', 'error');
       btn.disabled = false;
@@ -228,10 +246,5 @@ const SectionShows = (() => {
     API.remove('shows', id).then(() => load());
   }
 
-  function closeModal() {
-    document.getElementById('show-modal').classList.add('hidden');
-    document.getElementById('show-modal').innerHTML = '';
-  }
-
-  return { html, load, openNew, openEdit, closeModal, confirmDelete };
+  return { html, load, openNew, openEdit, back, confirmDelete };
 })();
